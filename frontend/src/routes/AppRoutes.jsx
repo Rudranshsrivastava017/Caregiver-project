@@ -6,9 +6,14 @@ import ProtectedRoute from '../components/auth/ProtectedRoute';
 // Pages
 import LandingPage from '../pages/LandingPage';
 import ServicesPage from '../pages/ServicesPage';
+import ServiceDetailPage from '../pages/ServiceDetailPage';
 import CaregiversPage from '../pages/CaregiversPage';
+import CaregiverDetailPage from '../pages/CaregiverDetailPage';
 import PatientsPage from '../pages/PatientsPage';
+import PatientFormPage from '../pages/PatientFormPage';
 import BookingsPage from '../pages/BookingsPage';
+import NewBookingPage from '../pages/NewBookingPage';
+import BookingDetailPage from '../pages/BookingDetailPage';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import CaregiverPendingPage from '../pages/CaregiverPendingPage';
@@ -21,9 +26,9 @@ export default function AppRoutes() {
         {/* Public Routes */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/services" element={<ServicesPage />} />
-        <Route path="/services/:id" element={<ServicesPage />} />
+        <Route path="/services/:id" element={<ServiceDetailPage />} />
         <Route path="/caregivers" element={<CaregiversPage />} />
-        <Route path="/caregivers/:id" element={<CaregiversPage />} />
+        <Route path="/caregivers/:id" element={<CaregiverDetailPage />} />
         
         {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />
@@ -42,7 +47,7 @@ export default function AppRoutes() {
         <Route
           path="/patients"
           element={
-            <ProtectedRoute allowedRoles={['user']}>
+            <ProtectedRoute allowedRoles={['user', 'admin']}>
               <PatientsPage />
             </ProtectedRoute>
           }
@@ -50,16 +55,24 @@ export default function AppRoutes() {
         <Route
           path="/patients/new"
           element={
-            <ProtectedRoute allowedRoles={['user']}>
-              <PatientsPage />
+            <ProtectedRoute allowedRoles={['user', 'admin']}>
+              <PatientFormPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/patients/:id/edit"
+          element={
+            <ProtectedRoute allowedRoles={['user', 'admin']}>
+              <PatientFormPage />
             </ProtectedRoute>
           }
         />
         <Route
           path="/patients/:id"
           element={
-            <ProtectedRoute allowedRoles={['user']}>
-              <PatientsPage />
+            <ProtectedRoute allowedRoles={['user', 'admin']}>
+              <PatientFormPage />
             </ProtectedRoute>
           }
         />
@@ -68,15 +81,15 @@ export default function AppRoutes() {
         <Route
           path="/booking/new"
           element={
-            <ProtectedRoute allowedRoles={['user']}>
-              <BookingsPage />
+            <ProtectedRoute allowedRoles={['user', 'admin']}>
+              <NewBookingPage />
             </ProtectedRoute>
           }
         />
         <Route
           path="/bookings"
           element={
-            <ProtectedRoute allowedRoles={['user', 'caregiver']}>
+            <ProtectedRoute allowedRoles={['user', 'caregiver', 'admin']}>
               <BookingsPage />
             </ProtectedRoute>
           }
@@ -84,8 +97,8 @@ export default function AppRoutes() {
         <Route
           path="/bookings/:id"
           element={
-            <ProtectedRoute allowedRoles={['user', 'caregiver']}>
-              <BookingsPage />
+            <ProtectedRoute allowedRoles={['user', 'caregiver', 'admin']}>
+              <BookingDetailPage />
             </ProtectedRoute>
           }
         />
