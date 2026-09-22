@@ -199,6 +199,24 @@ class UserModelAdapter {
     return user;
   }
 
+  static async find(query = {}) {
+    if (mongoose.connection.readyState === 1) {
+      return await User.find(query);
+    }
+    const results = [];
+    for (const u of inMemoryUsers.values()) {
+      let match = true;
+      for (const [key, val] of Object.entries(query)) {
+        if (u[key] !== val) {
+          match = false;
+          break;
+        }
+      }
+      if (match) results.push(u);
+    }
+    return results;
+  }
+
   static seedInitialData(usersArray) {
     usersArray.forEach((u) => inMemoryUsers.set(u.userId, u));
   }

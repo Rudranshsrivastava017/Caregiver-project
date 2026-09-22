@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { HeartPulse, PhoneCall, ShieldCheck, UserCheck, Calendar, Stethoscope, Users, LogOut, Clock, ShieldAlert } from 'lucide-react';
+import { HeartPulse, PhoneCall, ShieldCheck, UserCheck, Calendar, Stethoscope, Users, LogOut, Clock, ShieldAlert, FileCheck } from 'lucide-react';
+import NotificationDropdown from './NotificationDropdown';
 
 export default function Navbar() {
   const location = useLocation();
@@ -88,12 +89,26 @@ export default function Navbar() {
               )}
             </>
           )}
+
+          {isAuthenticated && user?.role === 'admin' && (
+            <>
+              <Link to="/admin" className={`py-1 flex items-center gap-1.5 ${isActive('/admin')}`}>
+                <ShieldAlert className="w-4 h-4 text-teal-600" />
+                Dashboard
+              </Link>
+              <Link to="/admin/verifications" className={`py-1 flex items-center gap-1.5 ${isActive('/admin/verifications')}`}>
+                <FileCheck className="w-4 h-4 text-teal-600" />
+                Verifications
+              </Link>
+            </>
+          )}
         </div>
 
         {/* User Auth Action Buttons */}
         <div className="flex items-center gap-3">
           {isAuthenticated ? (
             <div className="flex items-center gap-3">
+              <NotificationDropdown />
               <div className="flex items-center gap-2.5 bg-slate-100 p-1.5 pr-3 rounded-full border border-slate-200">
                 <img
                   src={user.profilePhotoUrl || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80"}
@@ -103,7 +118,7 @@ export default function Navbar() {
                 <div className="hidden sm:block text-left text-xs">
                   <span className="font-bold text-slate-900 block leading-tight">{user.fullName}</span>
                   <span className="capitalize text-slate-500 font-medium flex items-center gap-1">
-                    {user.role === 'caregiver' ? 'Nurse/Caregiver' : 'Family Member'}
+                    {user.role === 'admin' ? 'Platform Administrator' : user.role === 'caregiver' ? 'Nurse/Caregiver' : 'Family Member'}
                     {user.verificationStatus === 'pending' && (
                       <span className="text-[10px] bg-amber-100 text-amber-900 font-bold px-1.5 rounded">Pending ID</span>
                     )}

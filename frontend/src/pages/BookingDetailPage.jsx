@@ -4,6 +4,8 @@ import { toast } from 'sonner';
 import axiosClient from '../api/axiosClient';
 import { useAuth } from '../context/AuthContext';
 import StatusBadge from '../components/status/StatusBadge';
+import CareNoteForm from '../components/careNotes/CareNoteForm';
+import CareNoteTimeline from '../components/careNotes/CareNoteTimeline';
 import {
   ArrowLeft,
   Calendar,
@@ -20,6 +22,7 @@ import {
   AlertCircle,
   Loader2,
   Info,
+  Activity,
 } from 'lucide-react';
 
 export default function BookingDetailPage() {
@@ -31,6 +34,7 @@ export default function BookingDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
+  const [isNoteFormOpen, setIsNoteFormOpen] = useState(false);
 
   const fetchBooking = async () => {
     setIsLoading(true);
@@ -259,6 +263,17 @@ export default function BookingDetailPage() {
 
           <div className="flex items-center gap-3">
             {/* Caregiver Actions */}
+            {isCaregiverRole && ['confirmed', 'in_progress'].includes(booking.status) && (
+              <button
+                type="button"
+                onClick={() => setIsNoteFormOpen(true)}
+                className="btn-primary bg-teal-800 hover:bg-teal-900 text-xs px-4 py-2.5 flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <Activity className="w-4 h-4 text-emerald-400" />
+                <span>Log Vitals & Care Note</span>
+              </button>
+            )}
+
             {isCaregiverRole && booking.status === 'pending' && (
               <>
                 <button
@@ -330,6 +345,21 @@ export default function BookingDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Real-time Care Notes & Clinical Shift Timeline */}
+      <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+        <CareNoteTimeline bookingId={booking.bookingId || id} />
+      </div>
+
+      {/* Caregiver Vitals & Note Logging Modal */}
+      <CareNoteForm
+        bookingId={booking.bookingId || id}
+        isOpen={isNoteFormOpen}
+        onClose={() => setIsNoteFormOpen(false)}
+        onSuccess={() => {
+          // CareNoteTimeline will automatically update via real-time socket event
+        }}
+      />
     </div>
   );
 }

@@ -1,45 +1,20 @@
-const { UserModelAdapter, User } = require('../models/User');
+const { UserModelAdapter } = require('../models/User');
 const { CaregiverModelAdapter } = require('../models/Caregiver');
+const { PatientModelAdapter } = require('../models/Patient');
+const { BookingModelAdapter } = require('../models/Booking');
+const { ServiceModelAdapter } = require('../models/Service');
 
 // 1. Get List of Caregivers Pending Admin Verification
 const getPendingCaregivers = async (req, res, next) => {
   try {
+    const allUsers = await UserModelAdapter.find();
     let pendingCaregivers = [];
 
-    if (User.find && typeof User.find === 'function') {
-      const users = await User.find({
-        role: 'caregiver',
-        verificationStatus: 'pending',
-      });
-
-      for (const u of users) {
+    for (const u of allUsers) {
+      if (u.role === 'caregiver' && u.verificationStatus === 'pending') {
         const cg = await CaregiverModelAdapter.findByUserId(u.userId);
         pendingCaregivers.push({
           user: typeof u.toSafeObject === 'function' ? u.toSafeObject() : u,
-          caregiverProfile: cg || null,
-        });
-      }
-    } else {
-      // In-memory lookup
-      const allUsers = Array.from((await UserModelAdapter.find?.()) || []);
-      for (const u of allUsers) {
-        if (u.role === 'caregiver' && u.verificationStatus === 'pending') {
-          const cg = await CaregiverModelAdapter.findByUserId(u.userId);
-          pendingCaregivers.push({
-            user: typeof u.toSafeObject === 'function' ? u.toSafeObject() : u,
-            caregiverProfile: cg || null,
-          });
-        }
-      }
-    }
-
-    // Fallback demo pending caregivers if empty
-    if (pendingCaregivers.length === 0) {
-      const pendingUser = await UserModelAdapter.findByEmail('pending.caregiver@careelderly.org');
-      if (pendingUser) {
-        const cg = await CaregiverModelAdapter.findByUserId(pendingUser.userId);
-        pendingCaregivers.push({
-          user: typeof pendingUser.toSafeObject === 'function' ? pendingUser.toSafeObject() : pendingUser,
           caregiverProfile: cg || null,
         });
       }
@@ -70,10 +45,12 @@ const verifyCaregiver = async (req, res, next) => {
 
     let user = await UserModelAdapter.findById(id);
     if (!user) {
-      // Try finding by email or caregiver profile
+      // Try finding by caregiver profile id or email
       const cg = await CaregiverModelAdapter.findById(id);
       if (cg) {
         user = await UserModelAdapter.findById(cg.linkedUserId);
+      } else {
+        user = await UserModelAdapter.findByEmail(id);
       }
     }
 
@@ -111,7 +88,72 @@ const verifyCaregiver = async (req, res, next) => {
   }
 };
 
+// 3. Reject Caregiver (convenience handler)
+const rejectCaregiver = async (req, res, next) => {
+  req.body.decision = 'rejected';
+  return verifyCaregiver(req, res, next);
+};
+
+// 4. Get Platform Analytics Overview
+const getAdminAnalytics = async (req, res, next) => {
+  try {
+    const [users, caregivers, patients, bookings, services] = await Promise.all([
+      UserModelAdapter.find(),
+      CaregiverModelAdapter.find(),
+      PatientModelAdapter.find(),
+      BookingModelAdapter.find(),
+      ServiceModelAdapter.find(),
+    ]);
+
+    const familyUsersCount = users.filter((u) => u.role === 'user').length;
+    const caregiversCount = users.filter((u) => u.role === 'caregiver').length;
+    const pendingCaregiversCount = users.filter(
+      (u) => u.role === 'caregiver' && u.verificationStatus === 'pending'
+    ).length;
+    const verifiedCaregiversCount = caregivers.filter((cg) => cg.verified).length;
+
+    const pendingBookingsCount = bookings.filter((b) => b.status === 'pending').length;
+    const confirmedBookingsCount = bookings.filter((b) => b.status === 'confirmed').length;
+    const inProgressBookingsCount = bookings.filter((b) => b.status === 'in_progress').length;
+    const completedBookingsCount = bookings.filter((b) => b.status === 'completed').length;
+    const cancelledBookingsCount = bookings.filter((b) => b.status === 'cancelled').length;
+    const activeBookingsCount = confirmedBookingsCount + inProgressBookingsCount;
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        users: {
+          totalUsers: users.length,
+          familyUsers: familyUsersCount,
+          totalCaregivers: caregiversCount,
+          verifiedCaregivers: verifiedCaregiversCount,
+          pendingCaregivers: pendingCaregiversCount,
+        },
+        patients: {
+          totalPatients: patients.length,
+        },
+        bookings: {
+          totalBookings: bookings.length,
+          activeBookings: activeBookingsCount,
+          pending: pendingBookingsCount,
+          confirmed: confirmedBookingsCount,
+          inProgress: inProgressBookingsCount,
+          completed: completedBookingsCount,
+          cancelled: cancelledBookingsCount,
+        },
+        services: {
+          totalServices: services.length,
+        },
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getPendingCaregivers,
   verifyCaregiver,
+  rejectCaregiver,
+  getAdminAnalytics,
 };

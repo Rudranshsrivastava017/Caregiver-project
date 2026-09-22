@@ -3,6 +3,7 @@ const { PatientModelAdapter } = require('../models/Patient');
 const { CaregiverModelAdapter } = require('../models/Caregiver');
 const { ServiceModelAdapter } = require('../models/Service');
 const { UserModelAdapter } = require('../models/User');
+const { emitNewCaregiverRequest, emitBookingStatusUpdate } = require('../sockets/index');
 
 // Helper: Check if two scheduled time slots conflict on the same date
 const isSlotOverlapping = (slotA, slotB) => {
@@ -176,6 +177,22 @@ const createBooking = async (req, res, next) => {
     });
 
     const enriched = await enrichBooking(newBooking);
+
+    // Real-time socket notification to caregiver
+    try {
+      if (caregiver.linkedUserId) {
+        emitNewCaregiverRequest(caregiver.linkedUserId, newBooking.bookingId, {
+          bookingId: newBooking.bookingId,
+          serviceName: service.serviceName,
+          scheduledDate: newBooking.scheduledDate,
+          scheduledTime: newBooking.scheduledTime,
+          patientName: patient.fullName,
+          address: patient.address,
+        });
+      }
+    } catch (socketErr) {
+      console.warn('[Socket Warning] emitNewCaregiverRequest failed:', socketErr.message);
+    }
 
     return res.status(201).json({
       status: 'success',
@@ -359,6 +376,13 @@ const updateBookingStatus = async (req, res, next) => {
 
     const updated = await BookingModelAdapter.updateBookingStatus(booking.bookingId || id, newStatus);
     const enriched = await enrichBooking(updated);
+
+    // Real-time socket notification to family user and participants
+    try {
+      emitBookingStatusUpdate(booking.userId, booking.bookingId || id, newStatus);
+    } catch (socketErr) {
+      console.warn('[Socket Warning] emitBookingStatusUpdate failed:', socketErr.message);
+    }
 
     return res.status(200).json({
       status: 'success',

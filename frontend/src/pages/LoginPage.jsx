@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { GoogleLogin } from '@react-oauth/google';
-import { Lock, ArrowRight, ShieldCheck, UserCheck, Clock } from 'lucide-react';
+import { Lock, ArrowRight, ShieldCheck, UserCheck, Clock, ShieldAlert } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -34,7 +34,9 @@ export default function LoginPage() {
   });
 
   const handleLoginSuccessRedirect = (authenticatedUser) => {
-    if (authenticatedUser.role === 'caregiver' && authenticatedUser.verificationStatus === 'pending') {
+    if (authenticatedUser.role === 'admin') {
+      navigate('/admin', { replace: true });
+    } else if (authenticatedUser.role === 'caregiver' && authenticatedUser.verificationStatus === 'pending') {
       navigate('/caregiver/verification-pending');
     } else {
       navigate(from, { replace: true });
@@ -111,7 +113,7 @@ export default function LoginPage() {
           <span className="text-xs font-bold text-slate-700 uppercase tracking-wide block text-center">
             ⚡ Quick Test Login Presets
           </span>
-          <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
             <button
               type="button"
               onClick={() => applyPreset('vikram@careelderly.org', 'user')}
@@ -137,6 +139,15 @@ export default function LoginPage() {
             >
               <Clock className="w-4 h-4 text-amber-600" />
               <span>Pending ID</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => applyPreset('admin@careelderly.org', 'admin')}
+              className="bg-white hover:bg-purple-50 border border-slate-200 text-slate-800 p-2 rounded-lg font-semibold text-center flex flex-col items-center gap-1 cursor-pointer"
+            >
+              <ShieldAlert className="w-4 h-4 text-purple-600" />
+              <span>Admin</span>
             </button>
           </div>
         </div>

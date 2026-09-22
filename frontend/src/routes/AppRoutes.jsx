@@ -17,6 +17,8 @@ import BookingDetailPage from '../pages/BookingDetailPage';
 import LoginPage from '../pages/LoginPage';
 import RegisterPage from '../pages/RegisterPage';
 import CaregiverPendingPage from '../pages/CaregiverPendingPage';
+import AdminDashboardPage from '../pages/AdminDashboardPage';
+import CaregiverVerificationPage from '../pages/CaregiverVerificationPage';
 import NotFoundPage from '../pages/NotFoundPage';
 
 export default function AppRoutes() {
@@ -99,6 +101,24 @@ export default function AppRoutes() {
           element={
             <ProtectedRoute allowedRoles={['user', 'caregiver', 'admin']}>
               <BookingDetailPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Protected Admin Portal Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/verifications"
+          element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <CaregiverVerificationPage />
             </ProtectedRoute>
           }
         />

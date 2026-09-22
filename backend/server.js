@@ -1,23 +1,29 @@
 const express = require('express');
+const http = require('http');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
+const { initSocket } = require('./sockets/index');
 const authRoutes = require('./routes/authRoutes');
 const patientRoutes = require('./routes/patientRoutes');
 const serviceRoutes = require('./routes/serviceRoutes');
 const caregiverRoutes = require('./routes/caregiverRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
+const careNoteRoutes = require('./routes/careNoteRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const errorHandler = require('./middlewares/errorMiddleware');
 const { UserModelAdapter } = require('./models/User');
 const { PatientModelAdapter } = require('./models/Patient');
 const { ServiceModelAdapter } = require('./models/Service');
 const { CaregiverModelAdapter } = require('./models/Caregiver');
 const { BookingModelAdapter } = require('./models/Booking');
+const { CareNoteModelAdapter } = require('./models/CareNote');
 
 dotenv.config();
 
 const app = express();
+const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
 // CORS setup for credentialed cookies (HttpOnly refresh token)
@@ -30,6 +36,9 @@ app.use(
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
+
+// Initialize Socket.io server with authentication handshake
+initSocket(server, clientOrigin);
 
 app.use(express.json());
 app.use(cookieParser());
@@ -72,6 +81,18 @@ const seedDefaultUsers = async () => {
       verificationStatus: 'pending',
       legalIdVerified: false,
       profilePhotoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
+    },
+    {
+      userId: 'ADMIN-001',
+      fullName: 'Platform Administrator',
+      email: 'admin@careelderly.org',
+      phone: '+91 99999 00000',
+      passwordHash: 'password123',
+      role: 'admin',
+      legalIdNumber: 'GOV-ADMIN-01',
+      verificationStatus: 'approved',
+      legalIdVerified: true,
+      profilePhotoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&q=80',
     },
   ];
 
@@ -234,6 +255,29 @@ const seedDefaultUsers = async () => {
       bio: 'Patient and attentive home care companion dedicated to daily assistance, personal hygiene, and safety for elderly individuals.',
       photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
     },
+    {
+      caregiverId: 'CG-999',
+      linkedUserId: 'CG-999',
+      fullName: 'Priya Malhotra',
+      specialization: 'nurse',
+      qualification: 'B.Sc Nursing & GNM Registration',
+      yearsExperience: 4,
+      certificationDocsUrl: [
+        'https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=600&q=80',
+        'https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80'
+      ],
+      availability: [
+        { day: 'Monday', startTime: '09:00', endTime: '18:00' },
+        { day: 'Wednesday', startTime: '09:00', endTime: '18:00' },
+        { day: 'Friday', startTime: '09:00', endTime: '18:00' },
+      ],
+      rating: 0,
+      reviewsCount: 0,
+      serviceAreas: ['South Delhi', 'Noida'],
+      verified: false,
+      bio: 'Registered nurse specializing in elderly medication management and post-stroke rehabilitation care.',
+      photoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
+    },
   ];
 
   for (const cg of defaultCaregivers) {
@@ -278,7 +322,39 @@ const seedDefaultUsers = async () => {
     }
   }
 
-  console.log('[Server Seed] Default test accounts, elderly patient profiles, services catalog, caregivers, and bookings initialized.');
+  // Seed default Care Note for in_progress shift BK-8002
+  const defaultCareNotes = [
+    {
+      noteId: 'NOTE-9001',
+      bookingId: 'BK-8002',
+      caregiverId: 'CG-202',
+      patientId: 'PAT-102',
+      vitals: {
+        bp: '128/84 mmHg',
+        pulse: '76 bpm',
+        temperature: '98.4 °F',
+        sugarLevel: '115 mg/dL',
+        oxygenLevel: '99%',
+      },
+      tasksPerformed: [
+        'Assisted with post-surgery leg mobility exercises',
+        'Monitored resting heart rate & blood pressure',
+        'Assisted with evening hydration and medication',
+      ],
+      observations: 'Patient Kamla was in high spirits and completed 20 minutes of gentle knee flexion without acute discomfort.',
+      attachmentUrls: [],
+      timestamp: new Date(Date.now() - 3600000),
+    },
+  ];
+
+  for (const cn of defaultCareNotes) {
+    const existing = await CareNoteModelAdapter.findById(cn.noteId);
+    if (!existing) {
+      await CareNoteModelAdapter.createCareNote(cn);
+    }
+  }
+
+  console.log('[Server Seed] Default test accounts, elderly patient profiles, services catalog, caregivers, bookings, and care notes initialized.');
 };
 
 // Health Check
@@ -303,11 +379,17 @@ app.use('/api/v1/caregivers', caregiverRoutes);
 // Booking Flow Routes (No payment, with conflict prevention)
 app.use('/api/v1/bookings', bookingRoutes);
 
+// Care Notes & Vitals Logging Routes
+app.use('/api/v1/care-notes', careNoteRoutes);
+
+// Admin Portal Verification Routes
+app.use('/api/v1/admin', adminRoutes);
+
 // Global Error Handler
 app.use(errorHandler);
 
 // Start server & initialize DB asynchronously
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`[Server Running] CareElderly Backend API running on http://localhost:${PORT}`);
   connectDB().then(() => {
     seedDefaultUsers();
