@@ -73,47 +73,7 @@ Aging populations often require dedicated post-operative care, palliative assist
 - **1-Click Approvals & Structured Feedback**: Instantly approve caregivers to activate their public directory profile or provide structured rejection reasoning.
 - **Executive Operational KPI Dashboard**: Real-time platform metrics aggregating active shifts, verified staff ratio, patient volume, and booking statuses.
 
----
 
-## 🏛️ System Architecture
-
-```mermaid
-flowchart TD
-    subgraph Client ["Client Layer (React 19 + Vite)"]
-        UI["Web App (Tailwind CSS v4)"]
-        AuthCtx["In-Memory Auth Context"]
-        SocketCtx["Socket.io Client (Real-Time)"]
-    end
-
-    subgraph Server ["Server Layer (Node.js + Express)"]
-        Gateway["Express REST API (/api/v1)"]
-        SocketGateway["Socket.io Server (Private User Rooms)"]
-        Security["Security Layer: Helmet + Rate Limiter + JWT Guards"]
-    end
-
-    subgraph Persistence ["Dual-Mode Persistence Layer"]
-        Detector{"MongoDB Active?"}
-        Mongo[("MongoDB (Mongoose)")]
-        MemoryStore[("Atomic In-Memory Store Adapter")]
-    end
-
-    subgraph External ["External Services"]
-        SMTP["Nodemailer SMTP (Email Verification)"]
-        GoogleAuth["Google OAuth 2.0"]
-    end
-
-    UI -->|HTTPS REST| Security
-    Security --> Gateway
-    UI <-->|Bidirectional WebSockets| SocketGateway
-    AuthCtx -->|Bearer JWT Header| Gateway
-    Gateway --> Detector
-    Detector -->|Yes| Mongo
-    Detector -->|No / Offline| MemoryStore
-    Gateway -->|Transactional Emails| SMTP
-    Gateway -->|ID Token Verification| GoogleAuth
-```
-
----
 
 ## 🛠️ Tech Stack
 
@@ -211,23 +171,7 @@ cd backend
 npm install
 ```
 
-Create a `.env` file in the `backend/` directory (or copy from `.env.example`):
-```env
-PORT=5000
-NODE_ENV=development
-MONGO_URI=mongodb://127.0.0.1:27017/caregiver_db
-JWT_ACCESS_SECRET=super_secret_access_key_2026
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_SECRET=super_secret_refresh_key_2026
-JWT_REFRESH_EXPIRES_IN=7d
-CLIENT_URL=http://localhost:5173
 
-# Optional: SMTP Configuration (Defaults to dev console logger if omitted)
-# SMTP_HOST=smtp.gmail.com
-# SMTP_PORT=587
-# SMTP_USER=your_email@gmail.com
-# SMTP_PASS=your_app_password
-```
 
 Start the backend server:
 ```bash
@@ -377,114 +321,6 @@ cd frontend
 npm run build
 ```
 
----
-
-## 📁 Project Structure
-
-```text
-caregiver-platform/
-├── backend/
-│   ├── config/
-│   │   └── db.js                 # Dual-mode DB connector (Mongoose / In-Memory fallback)
-│   ├── controllers/
-│   │   ├── adminController.js    # Caregiver credential verification & metrics
-│   │   ├── authController.js     # Auth, JWT tokens, email verification, Google OAuth
-│   │   ├── bookingController.js  # Booking engine, 409 conflict checks, state machine
-│   │   ├── careNoteController.js # Clinical vitals logging & history
-│   │   ├── caregiverController.js# Verified staff directory & filter queries
-│   │   ├── patientController.js  # Patient CRUD with ownership security guard
-│   │   └── serviceController.js  # Healthcare service catalog endpoints
-│   ├── middlewares/
-│   │   ├── authMiddleware.js     # JWT extraction, verification & session attachment
-│   │   ├── errorMiddleware.js    # Standardized error responder
-│   │   └── roleMiddleware.js     # RBAC (roleGuard & verificationGuard)
-│   ├── models/                   # Dual-mode schemas (MongoDB / In-Memory Map adapters)
-│   │   ├── Booking.js
-│   │   ├── CareNote.js
-│   │   ├── Caregiver.js
-│   │   ├── Patient.js
-│   │   ├── Service.js
-│   │   └── User.js
-│   ├── routes/                   # Express REST route definitions
-│   ├── services/
-│   │   └── emailService.js       # Nodemailer SMTP with dev console fallback
-│   ├── sockets/
-│   │   └── index.js              # Socket.io gateway with user room isolation
-│   ├── server.js                 # Server entry point & test fixture seeder
-│   └── package.json
-│
-├── frontend/
-│   ├── src/
-│   │   ├── api/
-│   │   │   └── axiosClient.js    # In-memory JWT attach & 401 refresh interceptors
-│   │   ├── components/
-│   │   │   ├── auth/             # ProtectedRoute guards & role redirection
-│   │   │   ├── booking/          # ScheduleCalendar, BookingSummary, conflict flags
-│   │   │   ├── careNotes/        # CareNoteForm modal & CareNoteTimeline
-│   │   │   ├── caregivers/       # CaregiverCard, filters, badge indicators
-│   │   │   ├── layout/           # Navbar with SOS Hotline banner, Footer
-│   │   │   ├── patients/         # PatientCard, PatientForm with mobility tags
-│   │   │   ├── services/         # ServiceCard & category filters
-│   │   │   └── status/           # Standardized lifecycle StatusBadges
-│   │   ├── context/
-│   │   │   ├── AuthContext.jsx   # In-memory JWT token state & user session
-│   │   │   └── SocketContext.jsx # Real-time event subscription & Sonner toasts
-│   │   ├── pages/
-│   │   │   ├── AdminDashboardPage.jsx        # Platform metrics & KPIs
-│   │   │   ├── BookingDetailPage.jsx        # Shift tracker & live care notes
-│   │   │   ├── BookingsPage.jsx             # Active & historical shifts
-│   │   │   ├── CaregiverDetailPage.jsx      # Doctor/nurse qualifications & booking
-│   │   │   ├── CaregiverPendingPage.jsx     # Waiting state for unverified caregivers
-│   │   │   ├── CaregiverVerificationPage.jsx# Admin document review queue
-│   │   │   ├── CaregiversPage.jsx           # Staff directory
-│   │   │   ├── LandingPage.jsx              # Hero, services, testimonials
-│   │   │   ├── LoginPage.jsx                # 1-click demo login presets
-│   │   │   ├── NewBookingPage.jsx           # 3-step scheduling wizard
-│   │   │   ├── PatientsPage.jsx             # Family patient roster
-│   │   │   ├── RegisterPage.jsx             # User & Caregiver registration
-│   │   │   └── VerifyEmailPage.jsx          # Token verification landing screen
-│   │   ├── routes/
-│   │   │   └── AppRoutes.jsx                # Client routing tree
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── index.html
-│   ├── vite.config.js
-│   └── package.json
-│
-└── README.md
-```
-
----
-
-## 🔒 Security & Architecture Hardening
-
-| Protection Layer | Implementation Mechanism | Benefit |
-|---|---|---|
-| **Token Storage** | Access token stored in-memory (`axiosClient.js`) | Eliminates XSS token exfiltration vulnerabilities |
-| **Session Rotation** | Refresh token stored in `HttpOnly`, `SameSite=Strict` cookie | Protects long-lived sessions with automatic silent renewal |
-| **Password Security** | `bcryptjs` with salt rounds = 10 | Resistant against rainbow table attacks |
-| **HTTP Headers** | `helmet` middleware enabled | Mitigates MIME sniffing, clickjacking, and XSS attacks |
-| **Rate Limiting** | `express-rate-limit` scoped to `/auth` endpoints | Prevents brute-force login and credential-stuffing attacks |
-| **Tenant Isolation** | `patient.linkedUserId === req.user.userId` | Prevents unauthorized cross-family data access |
-| **Conflict Safety** | Atomic overlap query in `bookingController.js` | Prevents double-booking same caregiver across identical shifts |
-| **Email Verification** | Server-side cryptographically signed token | Prevents identity spoofing; graceful fallback in dev |
-
----
-
-## 🗺️ Roadmap & Enhancements
-
-- [x] Phase 1: Authentication & Role-Based Access Control
-- [x] Phase 2: Patient Profile Management & Ownership Isolation
-- [x] Phase 3: Healthcare Catalog & Verified Caregiver Directory
-- [x] Phase 4: Conflict-Free Scheduling & Double-Booking Prevention
-- [x] Phase 5: Real-Time WebSocket Notifications & Clinical Care Notes
-- [x] Phase 6: Admin Credential Verification Portal & Operational Analytics
-- [x] Phase 7: Security Hardening (Helmet, Rate Limiting, SMTP Email Verification)
-- [ ] Phase 8: WebRTC In-App Video Consultations between Family & Nurses
-- [ ] Phase 9: Multi-Lingual Support (i18n for Regional Indian Languages)
-- [ ] Phase 10: Native Mobile Companion App (React Native)
-
----
 
 ## 📄 License
 
