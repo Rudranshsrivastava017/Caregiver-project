@@ -440,22 +440,32 @@ export default function NewBookingPage() {
                         alt={cg.fullName}
                         className="w-12 h-12 rounded-full object-cover border-2 border-teal-600 shrink-0"
                       />
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="font-bold text-slate-900 text-sm truncate">
                           {cg.fullName}
                         </p>
-                        <span className="text-[11px] font-bold text-teal-800 uppercase block">
-                          {cg.specialization}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-bold text-teal-800 uppercase block">
+                            {cg.specialization}
+                          </span>
+                          {cg.isBooked && (
+                            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-rose-50 text-rose-800 border border-rose-200">
+                              Booked
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
                     <div className="text-xs text-slate-500 space-y-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-bold text-slate-900">₹{cg.amount || cg.rate || 500}</span>
+                        <span className="font-bold text-amber-800 flex items-center gap-1">
+                          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                          {cg.rating || 5.0} rating
+                        </span>
+                      </div>
                       <p className="truncate">{cg.qualification}</p>
-                      <span className="font-bold text-amber-800 flex items-center gap-1">
-                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
-                        {cg.rating || 5.0} rating
-                      </span>
                     </div>
 
                     {isSelected && (

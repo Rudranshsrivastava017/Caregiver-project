@@ -49,6 +49,17 @@ export default function CaregiverCard({ caregiver }) {
                   <CheckCircle2 className="w-4 h-4 text-teal-600 shrink-0" />
                 </span>
               )}
+              {caregiver.isBooked ? (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-800 border border-rose-200 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+                  <span>Booked</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+                  <span>Available</span>
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -75,9 +86,17 @@ export default function CaregiverCard({ caregiver }) {
           {caregiver.bio || 'Dedicated healthcare professional experienced in senior home health and nursing care.'}
         </p>
 
-        {/* Rating & Service Areas */}
+        {/* Rating, Price & Service Areas */}
         <div className="bg-slate-50 p-3.5 rounded-xl space-y-2 text-xs border border-slate-200">
           <div className="flex items-center justify-between">
+            <span className="text-slate-600 font-semibold">Care Rate:</span>
+            <span className="text-slate-900 font-extrabold text-sm">
+              ₹{caregiver.amount || caregiver.rate || 500}
+              <span className="text-[11px] font-normal text-slate-500"> / shift</span>
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-slate-200 pt-2">
             <span className="text-slate-600 font-semibold">Rating:</span>
             <span className="text-amber-800 font-bold flex items-center gap-1 bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
               <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
@@ -119,9 +138,13 @@ export default function CaregiverCard({ caregiver }) {
 
           <Link
             to={`/booking/new?caregiverId=${caregiver.caregiverId}`}
-            className="btn-primary text-xs px-4 py-2 flex items-center gap-1"
+            className={`text-xs px-4 py-2 flex items-center gap-1 font-bold rounded-xl transition-all shadow-xs ${
+              caregiver.isBooked
+                ? 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100'
+                : 'btn-primary'
+            }`}
           >
-            <span>Select</span>
+            <span>{caregiver.isBooked ? 'Booked' : 'Select'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

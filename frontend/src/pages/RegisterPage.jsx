@@ -53,8 +53,8 @@ export default function RegisterPage() {
   const onSubmit = async (data) => {
     try {
       const user = await registerAuth(data);
-      if (user.role === 'caregiver' && user.verificationStatus === 'pending') {
-        navigate('/caregiver/verification-pending');
+      if (user.role === 'caregiver') {
+        navigate('/caregivers');
       } else {
         navigate('/dashboard');
       }

@@ -25,7 +25,7 @@ This document serves as the master record of the project's completed architectur
   - Pre-seeded test accounts:
     - Family User: `vikram@careelderly.org` / `Password@123` (`USER-001`)
     - Nurse Caregiver: `anita.nurse@careelderly.org` / `Password@123` (`CG-201`)
-    - Admin: `admin@careelderly.org` / `Admin@123` (`ADMIN-001`)
+    - Admin: `admin@careelderly.org` / `password123` (`ADMIN-001`)
 - **Frontend**:
   - `AuthContext.jsx`: Persistent authentication state, token storage in `localStorage`, automatic auth headers.
   - `LoginPage.jsx` & `RegisterPage.jsx`: Validated forms with quick-fill demo buttons.

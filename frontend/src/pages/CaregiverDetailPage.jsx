@@ -118,6 +118,17 @@ export default function CaregiverDetailPage() {
                   <span>Government ID Verified</span>
                 </span>
               )}
+              {caregiver.isBooked ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-rose-800 bg-rose-50 px-3 py-1 rounded-full border border-rose-200 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse"></span>
+                  <span>Booked (Shift Scheduled)</span>
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-600"></span>
+                  <span>Available for Booking</span>
+                </span>
+              )}
             </div>
 
             <p className="text-base font-bold text-teal-800">
@@ -125,6 +136,10 @@ export default function CaregiverDetailPage() {
             </p>
 
             <div className="flex items-center gap-4 text-xs sm:text-sm text-slate-600 flex-wrap">
+              <span className="bg-teal-50 font-extrabold px-3 py-1 rounded-lg text-teal-900 border border-teal-200">
+                ₹{caregiver.amount || caregiver.rate || 500} / shift
+              </span>
+              <span>•</span>
               <span className="bg-slate-100 font-semibold px-2.5 py-1 rounded-lg text-slate-800 uppercase tracking-wide">
                 Role: {caregiver.specialization}
               </span>

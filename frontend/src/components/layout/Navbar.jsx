@@ -1,12 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
+import axiosClient from '../../api/axiosClient';
 import { useAuth } from '../../context/AuthContext';
-import { HeartPulse, PhoneCall, ShieldCheck, UserCheck, Calendar, Stethoscope, Users, LogOut, Clock, ShieldAlert, FileCheck } from 'lucide-react';
+import { HeartPulse, PhoneCall, ShieldCheck, UserCheck, Calendar, Stethoscope, Users, LogOut, Clock, ShieldAlert, FileCheck, MailCheck } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
 
 export default function Navbar() {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
+  const [isResending, setIsResending] = useState(false);
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    try {
+      const response = await axiosClient.post('/auth/resend-verification');
+      toast.success(response.data?.message || 'Verification email dispatched. Please check your inbox.');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to resend verification email.');
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const isActive = (path) => {
     return location.pathname === path ? 'text-teal-800 font-bold border-b-2 border-teal-700' : 'text-slate-700 hover:text-teal-700';
@@ -29,6 +44,28 @@ export default function Navbar() {
           </div>
         </div>
       </div>
+
+      {/* Unverified Email Warning Banner */}
+      {user && user.isEmailVerified === false && (
+        <div className="bg-amber-400 text-amber-950 text-xs sm:text-sm py-2 px-4 border-b border-amber-500 font-medium">
+          <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
+            <div className="flex items-center gap-2 justify-center sm:justify-start">
+              <MailCheck className="w-4 h-4 text-amber-950 shrink-0" />
+              <span>
+                Your email address (<strong>{user.email}</strong>) is not yet verified. Please verify your email to ensure timely notifications.
+              </span>
+            </div>
+            <button
+              type="button"
+              disabled={isResending}
+              onClick={handleResendVerification}
+              className="underline font-bold text-amber-950 hover:text-black transition-colors cursor-pointer shrink-0 disabled:opacity-50"
+            >
+              {isResending ? 'Sending Email...' : 'Resend Verification Link'}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Main Navigation Bar */}
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">

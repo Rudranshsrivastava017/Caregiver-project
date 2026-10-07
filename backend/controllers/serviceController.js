@@ -1,4 +1,5 @@
 const { ServiceModelAdapter } = require('../models/Service');
+const { BookingModelAdapter } = require('../models/Booking');
 
 // 1. Get all services with optional category & search filter
 const getServices = async (req, res, next) => {
@@ -25,10 +26,26 @@ const getServices = async (req, res, next) => {
       );
     }
 
+    const allBookings = await BookingModelAdapter.find();
+    const activeBookings = allBookings.filter((b) =>
+      ['pending', 'confirmed', 'in_progress'].includes(b.status)
+    );
+
+    const enrichedServices = services.map((s) => {
+      const raw = typeof s.toObject === 'function' ? s.toObject() : { ...s };
+      const isBooked = activeBookings.some(
+        (b) => b.serviceId === raw.serviceId || (raw.caregiverId && b.caregiverId === raw.caregiverId)
+      );
+      return {
+        ...raw,
+        isBooked,
+      };
+    });
+
     return res.status(200).json({
       status: 'success',
-      count: services.length,
-      data: services,
+      count: enrichedServices.length,
+      data: enrichedServices,
     });
   } catch (error) {
     next(error);
@@ -48,9 +65,21 @@ const getServiceById = async (req, res, next) => {
       });
     }
 
+    const allBookings = await BookingModelAdapter.find();
+    const activeBookings = allBookings.filter((b) =>
+      ['pending', 'confirmed', 'in_progress'].includes(b.status)
+    );
+    const raw = typeof service.toObject === 'function' ? service.toObject() : { ...service };
+    const isBooked = activeBookings.some(
+      (b) => b.serviceId === raw.serviceId || (raw.caregiverId && b.caregiverId === raw.caregiverId)
+    );
+
     return res.status(200).json({
       status: 'success',
-      data: service,
+      data: {
+        ...raw,
+        isBooked,
+      },
     });
   } catch (error) {
     next(error);

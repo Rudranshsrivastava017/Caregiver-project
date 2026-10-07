@@ -3,6 +3,7 @@ const http = require('http');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
 const dotenv = require('dotenv');
+const helmet = require('helmet');
 const connectDB = require('./config/db');
 const { initSocket } = require('./sockets/index');
 const authRoutes = require('./routes/authRoutes');
@@ -26,13 +27,33 @@ const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 
+// HTTP Security Headers (Helmet)
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    contentSecurityPolicy: false,
+  })
+);
+
 // CORS setup for credentialed cookies (HttpOnly refresh token)
 const clientOrigin = process.env.CLIENT_URL || 'http://localhost:5173';
 app.use(
   cors({
-    origin: [clientOrigin, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (mobile, curl, Postman)
+      if (!origin) return callback(null, true);
+      const isLocalhost =
+        origin.startsWith('http://localhost:') ||
+        origin.startsWith('http://127.0.0.1:');
+      const isConfiguredClient = origin === process.env.CLIENT_URL;
+
+      if (isLocalhost || isConfiguredClient) {
+        return callback(null, true);
+      }
+      return callback(null, true); // Permissive in dev so port shifts never break user login
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
@@ -56,6 +77,7 @@ const seedDefaultUsers = async () => {
       legalIdNumber: 'PAN-XXXX-1029',
       verificationStatus: 'approved',
       legalIdVerified: true,
+      isEmailVerified: true,
       profilePhotoUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
     },
     {
@@ -68,6 +90,7 @@ const seedDefaultUsers = async () => {
       legalIdNumber: 'AADHAAR-8839-2019',
       verificationStatus: 'approved',
       legalIdVerified: true,
+      isEmailVerified: true,
       profilePhotoUrl: 'https://images.unsplash.com/photo-1594824813566-88855ce7890b?auto=format&fit=crop&w=300&q=80',
     },
     {
@@ -80,6 +103,7 @@ const seedDefaultUsers = async () => {
       legalIdNumber: 'VOTER-9921-3312',
       verificationStatus: 'pending',
       legalIdVerified: false,
+      isEmailVerified: true,
       profilePhotoUrl: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=300&q=80',
     },
     {
@@ -92,6 +116,7 @@ const seedDefaultUsers = async () => {
       legalIdNumber: 'GOV-ADMIN-01',
       verificationStatus: 'approved',
       legalIdVerified: true,
+      isEmailVerified: true,
       profilePhotoUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=300&q=80',
     },
   ];
@@ -357,11 +382,15 @@ const seedDefaultUsers = async () => {
   console.log('[Server Seed] Default test accounts, elderly patient profiles, services catalog, caregivers, bookings, and care notes initialized.');
 };
 
-// Health Check
+// Health Check with Persistence Mode & Uptime Visibility
 app.get('/api/v1/health', (req, res) => {
+  const mongoose = require('mongoose');
+  const isMongoConnected = mongoose.connection && mongoose.connection.readyState === 1;
   res.status(200).json({
     status: 'success',
     message: 'CareElderly Healthcare Authentication Server is active.',
+    persistenceMode: isMongoConnected ? 'mongodb' : 'in-memory-fallback',
+    uptime: Math.round(process.uptime() * 100) / 100,
     timestamp: new Date().toISOString(),
   });
 });

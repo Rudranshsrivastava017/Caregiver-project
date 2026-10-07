@@ -65,6 +65,14 @@ const caregiverSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    amount: {
+      type: Number,
+      default: 500,
+    },
+    rate: {
+      type: Number,
+      default: 500,
+    },
     bio: {
       type: String,
       default: '',
@@ -122,6 +130,8 @@ class CaregiverModelAdapter {
     const caregiverData = {
       ...data,
       caregiverId,
+      amount: data.amount || data.rate || 500,
+      rate: data.rate || data.amount || 500,
       _id: caregiverId,
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -71,6 +71,20 @@ const userSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
+    isEmailVerified: {
+      type: Boolean,
+      default: function () {
+        return this.authProvider === 'google' || this.role === 'admin';
+      },
+    },
+    emailVerificationToken: {
+      type: String,
+      default: null,
+    },
+    emailVerificationExpires: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -105,6 +119,7 @@ userSchema.methods.toSafeObject = function () {
   const obj = this.toObject ? this.toObject() : { ...this };
   delete obj.passwordHash;
   delete obj.refreshToken;
+  delete obj.emailVerificationToken;
   delete obj.__v;
   return obj;
 };
@@ -164,6 +179,9 @@ class UserModelAdapter {
       legalIdDocumentUrl: userData.legalIdDocumentUrl || null,
       verificationStatus: userData.verificationStatus || (userData.role === 'caregiver' ? 'pending' : 'approved'),
       legalIdVerified: userData.legalIdVerified !== undefined ? userData.legalIdVerified : (userData.role !== 'caregiver'),
+      isEmailVerified: userData.isEmailVerified !== undefined ? userData.isEmailVerified : (userData.authProvider === 'google' || userData.role === 'admin'),
+      emailVerificationToken: userData.emailVerificationToken || null,
+      emailVerificationExpires: userData.emailVerificationExpires || null,
       profilePhotoUrl: userData.profilePhotoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=300&q=80',
       refreshToken: null,
       createdAt: new Date(),
@@ -179,6 +197,7 @@ class UserModelAdapter {
         const copy = { ...this };
         delete copy.passwordHash;
         delete copy.refreshToken;
+        delete copy.emailVerificationToken;
         return copy;
       },
       save: async function () {
@@ -189,6 +208,17 @@ class UserModelAdapter {
 
     inMemoryUsers.set(memoryUser.userId, memoryUser);
     return memoryUser;
+  }
+
+  static async findByVerificationToken(token) {
+    if (!token) return null;
+    if (mongoose.connection.readyState === 1) {
+      return await User.findOne({ emailVerificationToken: token });
+    }
+    for (const u of inMemoryUsers.values()) {
+      if (u.emailVerificationToken === token) return u;
+    }
+    return null;
   }
 
   static async saveUser(user) {

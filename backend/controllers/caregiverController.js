@@ -1,4 +1,5 @@
 const { CaregiverModelAdapter } = require('../models/Caregiver');
+const { BookingModelAdapter } = require('../models/Booking');
 
 // 1. Get filtered list of verified caregivers
 const getCaregivers = async (req, res, next) => {
@@ -39,10 +40,34 @@ const getCaregivers = async (req, res, next) => {
       caregivers = caregivers.filter((cg) => (cg.rating || 0) >= min);
     }
 
+    // Enrich with active booking status & amount
+    const allBookings = await BookingModelAdapter.find();
+    const activeBookings = allBookings.filter((b) =>
+      ['pending', 'confirmed', 'in_progress'].includes(b.status)
+    );
+
+    const enrichedCaregivers = caregivers.map((cg) => {
+      const cgId = cg.caregiverId || cg._id;
+      const linkedId = cg.linkedUserId;
+      const cgBookings = activeBookings.filter(
+        (b) => b.caregiverId === cgId || (linkedId && b.caregiverId === linkedId)
+      );
+      const isBooked = cgBookings.length > 0;
+      const raw = typeof cg.toObject === 'function' ? cg.toObject() : { ...cg };
+      return {
+        ...raw,
+        amount: raw.amount || raw.rate || raw.hourlyRate || 500,
+        rate: raw.rate || raw.amount || 500,
+        isBooked,
+        status: isBooked ? 'booked' : 'available',
+        activeBookingsCount: cgBookings.length,
+      };
+    });
+
     return res.status(200).json({
       status: 'success',
-      count: caregivers.length,
-      data: caregivers,
+      count: enrichedCaregivers.length,
+      data: enrichedCaregivers,
     });
   } catch (error) {
     next(error);
@@ -66,9 +91,25 @@ const getCaregiverById = async (req, res, next) => {
       });
     }
 
+    const allBookings = await BookingModelAdapter.find();
+    const activeBookings = allBookings.filter(
+      (b) =>
+        ['pending', 'confirmed', 'in_progress'].includes(b.status) &&
+        (b.caregiverId === caregiver.caregiverId || (caregiver.linkedUserId && b.caregiverId === caregiver.linkedUserId))
+    );
+    const isBooked = activeBookings.length > 0;
+    const raw = typeof caregiver.toObject === 'function' ? caregiver.toObject() : { ...caregiver };
+
     return res.status(200).json({
       status: 'success',
-      data: caregiver,
+      data: {
+        ...raw,
+        amount: raw.amount || raw.rate || raw.hourlyRate || 500,
+        rate: raw.rate || raw.amount || 500,
+        isBooked,
+        status: isBooked ? 'booked' : 'available',
+        activeBookingsCount: activeBookings.length,
+      },
     });
   } catch (error) {
     next(error);

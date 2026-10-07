@@ -33,6 +33,10 @@ const serviceSchema = new mongoose.Schema(
       enum: ['medical', 'non_medical', 'rehabilitation'],
       required: true,
     },
+    caregiverId: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

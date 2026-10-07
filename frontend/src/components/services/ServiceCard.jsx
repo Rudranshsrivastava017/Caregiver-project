@@ -49,13 +49,21 @@ export default function ServiceCard({ service }) {
           <div className="w-12 h-12 rounded-xl bg-teal-100 text-teal-800 flex items-center justify-center shadow-xs">
             {getCategoryIcon(service.category, service.serviceId)}
           </div>
-          <span
-            className={`font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wider border ${getCategoryBadgeClass(
-              service.category
-            )}`}
-          >
-            {service.category?.replace('_', ' ')}
-          </span>
+          <div className="flex items-center gap-1.5">
+            {service.isBooked && (
+              <span className="font-bold px-2.5 py-1 rounded-full text-xs uppercase tracking-wider border bg-rose-50 text-rose-800 border-rose-200 shadow-2xs flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+                <span>Booked</span>
+              </span>
+            )}
+            <span
+              className={`font-bold px-3 py-1 rounded-full text-xs uppercase tracking-wider border ${getCategoryBadgeClass(
+                service.category
+              )}`}
+            >
+              {service.category?.replace('_', ' ')}
+            </span>
+          </div>
         </div>
 
         {/* Title & Description */}
@@ -114,9 +122,13 @@ export default function ServiceCard({ service }) {
 
           <Link
             to={`/booking/new?serviceId=${service.serviceId}`}
-            className="btn-primary text-xs px-4 py-2.5 flex items-center gap-1.5"
+            className={`text-xs px-4 py-2.5 flex items-center gap-1.5 font-bold rounded-xl transition-all shadow-xs ${
+              service.isBooked
+                ? 'bg-rose-50 text-rose-800 border border-rose-300 hover:bg-rose-100'
+                : 'btn-primary'
+            }`}
           >
-            <span>Book Care</span>
+            <span>{service.isBooked ? 'Booked' : 'Book Care'}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>

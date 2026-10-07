@@ -19,6 +19,7 @@ import RegisterPage from '../pages/RegisterPage';
 import CaregiverPendingPage from '../pages/CaregiverPendingPage';
 import AdminDashboardPage from '../pages/AdminDashboardPage';
 import CaregiverVerificationPage from '../pages/CaregiverVerificationPage';
+import VerifyEmailPage from '../pages/VerifyEmailPage';
 import NotFoundPage from '../pages/NotFoundPage';
 
 export default function AppRoutes() {
@@ -35,6 +36,7 @@ export default function AppRoutes() {
         {/* Auth Routes */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/verify-email" element={<VerifyEmailPage />} />
         <Route path="/caregiver/verification-pending" element={<CaregiverPendingPage />} />
 
         {/* Protected Dashboard & Patient Management (Family User Role) */}

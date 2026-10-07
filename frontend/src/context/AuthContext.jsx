@@ -81,7 +81,7 @@ export const AuthProvider = ({ children }) => {
       setMemoryToken(accessToken);
 
       if (newUser.role === 'caregiver') {
-        toast.info('Account created! Caregiver legal ID is under admin review.');
+        toast.success('Healthcare professional registered! Profile & services added at ₹500/shift.');
       } else {
         toast.success('Registration successful! Welcome to CareElderly.');
       }
