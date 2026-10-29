@@ -73,6 +73,7 @@ Aging populations often require dedicated post-operative care, palliative assist
 - **1-Click Approvals & Structured Feedback**: Instantly approve caregivers to activate their public directory profile or provide structured rejection reasoning.
 - **Executive Operational KPI Dashboard**: Real-time platform metrics aggregating active shifts, verified staff ratio, patient volume, and booking statuses.
 
+<<<<<<< HEAD
 ---
 
 ## 🏛️ System Architecture
@@ -114,6 +115,9 @@ flowchart TD
 ```
 
 ---
+=======
+
+>>>>>>> d130cee47b43d7625ab12e9229ab0076214d547c
 
 ## 🛠️ Tech Stack
 
@@ -211,6 +215,7 @@ cd backend
 npm install
 ```
 
+<<<<<<< HEAD
 Create a `.env` file in the `backend/` directory (or copy from `.env.example`):
 ```env
 PORT=5000
@@ -228,6 +233,9 @@ CLIENT_URL=http://localhost:5173
 # SMTP_USER=your_email@gmail.com
 # SMTP_PASS=your_app_password
 ```
+=======
+
+>>>>>>> d130cee47b43d7625ab12e9229ab0076214d547c
 
 Start the backend server:
 ```bash
@@ -377,6 +385,7 @@ cd frontend
 npm run build
 ```
 
+<<<<<<< HEAD
 ---
 
 ## 📁 Project Structure
@@ -485,6 +494,8 @@ caregiver-platform/
 - [ ] Phase 10: Native Mobile Companion App (React Native)
 
 ---
+=======
+>>>>>>> d130cee47b43d7625ab12e9229ab0076214d547c
 
 ## 📄 License
 
