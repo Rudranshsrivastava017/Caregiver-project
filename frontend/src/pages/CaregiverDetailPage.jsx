@@ -20,6 +20,7 @@ export default function CaregiverDetailPage() {
   const navigate = useNavigate();
 
   const [caregiver, setCaregiver] = useState(null);
+  const [reviews, setReviews] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -31,6 +32,16 @@ export default function CaregiverDetailPage() {
         const response = await axiosClient.get(`/caregivers/${id}`);
         if (response.data?.status === 'success' && isMounted) {
           setCaregiver(response.data.data);
+        }
+
+        // Fetch verified patient reviews
+        try {
+          const reviewsRes = await axiosClient.get(`/caregivers/${id}/reviews`);
+          if (reviewsRes.data?.status === 'success' && isMounted) {
+            setReviews(reviewsRes.data.data || []);
+          }
+        } catch (revErr) {
+          console.warn('Could not fetch caregiver reviews:', revErr.message);
         }
       } catch (err) {
         if (isMounted) {
@@ -219,6 +230,78 @@ export default function CaregiverDetailPage() {
               </p>
             )}
           </div>
+        </div>
+
+        {/* Verified Patient & Family Reviews Section */}
+        <div className="space-y-4 pt-4 border-t border-slate-100">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="flex items-center gap-2 text-slate-900 font-bold text-base">
+              <Star className="w-5 h-5 text-amber-500 fill-amber-400" />
+              <span>Verified Patient & Family Reviews ({reviews.length})</span>
+            </div>
+            <div className="text-xs text-slate-500 font-semibold">
+              Average Rating: <strong className="text-teal-800 text-sm">★ {caregiver.rating || 5.0}</strong> / 5.0
+            </div>
+          </div>
+
+          {reviews.length > 0 ? (
+            <div className="space-y-3">
+              {reviews.map((rev, idx) => (
+                <div
+                  key={rev.reviewId || idx}
+                  className="bg-slate-50/80 border border-slate-200/90 rounded-2xl p-4 sm:p-5 space-y-2.5 shadow-2xs"
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-full bg-teal-700 text-white font-bold text-xs flex items-center justify-center shrink-0">
+                        {rev.userName ? rev.userName.charAt(0).toUpperCase() : 'F'}
+                      </div>
+                      <div>
+                        <span className="font-bold text-slate-900 text-sm block leading-tight">
+                          {rev.userName || 'Family Member'}
+                        </span>
+                        <span className="text-[11px] text-teal-800 font-medium">
+                          {rev.serviceName || 'Healthcare Shift'}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center text-amber-500">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`w-3.5 h-3.5 ${
+                              s <= rev.rating
+                                ? 'fill-amber-400 text-amber-500'
+                                : 'text-slate-200'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-xs font-bold text-amber-900">
+                        {rev.rating}.0
+                      </span>
+                    </div>
+                  </div>
+
+                  {rev.comment && (
+                    <p className="text-slate-700 text-xs sm:text-sm leading-relaxed italic pt-1">
+                      "{rev.comment}"
+                    </p>
+                  )}
+
+                  <div className="text-[10px] text-slate-400 font-medium pt-1">
+                    Verified shift review • {new Date(rev.createdAt || Date.now()).toLocaleDateString()}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-slate-50 rounded-2xl p-6 text-center border border-slate-200 text-slate-500 text-xs">
+              No written reviews yet. Be the first family member to review {caregiver.fullName.split(' ')[0]} after a completed care shift!
+            </div>
+          )}
         </div>
 
         {/* Action Button Footer */}

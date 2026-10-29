@@ -13,6 +13,7 @@ const caregiverRoutes = require('./routes/caregiverRoutes');
 const bookingRoutes = require('./routes/bookingRoutes');
 const careNoteRoutes = require('./routes/careNoteRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const reviewRoutes = require('./routes/reviewRoutes');
 const errorHandler = require('./middlewares/errorMiddleware');
 const { UserModelAdapter } = require('./models/User');
 const { PatientModelAdapter } = require('./models/Patient');
@@ -20,6 +21,7 @@ const { ServiceModelAdapter } = require('./models/Service');
 const { CaregiverModelAdapter } = require('./models/Caregiver');
 const { BookingModelAdapter } = require('./models/Booking');
 const { CareNoteModelAdapter } = require('./models/CareNote');
+const { ReviewModelAdapter } = require('./models/Review');
 
 dotenv.config();
 
@@ -379,7 +381,40 @@ const seedDefaultUsers = async () => {
     }
   }
 
-  console.log('[Server Seed] Default test accounts, elderly patient profiles, services catalog, caregivers, bookings, and care notes initialized.');
+  // Seed default patient reviews
+  const defaultReviews = [
+    {
+      reviewId: 'REV-001',
+      bookingId: 'BK-001',
+      caregiverId: 'CG-201',
+      userId: 'USER-001',
+      userName: 'Vikram Sharma',
+      rating: 5,
+      comment: 'Nurse Anita was exceptionally attentive and patient with my elderly father Ramesh. She took blood pressure and SpO2 readings meticulously and assisted him with his morning rehabilitation walk. Highly recommended!',
+      serviceName: 'Elderly Home Nursing Care',
+      createdAt: new Date(Date.now() - 86400000 * 2),
+    },
+    {
+      reviewId: 'REV-002',
+      bookingId: 'BK-002',
+      caregiverId: 'CG-201',
+      userId: 'USER-001',
+      userName: 'Vikram Sharma',
+      rating: 5,
+      comment: 'Outstanding geriatric healthcare assistance. Always punctual, gentle, and treats my father with immense respect and professional medical competence.',
+      serviceName: 'Elderly Home Nursing Care',
+      createdAt: new Date(Date.now() - 86400000 * 5),
+    },
+  ];
+
+  for (const rev of defaultReviews) {
+    const existing = await ReviewModelAdapter.findById(rev.reviewId);
+    if (!existing) {
+      await ReviewModelAdapter.createReview(rev);
+    }
+  }
+
+  console.log('[Server Seed] Default test accounts, elderly patient profiles, services catalog, caregivers, bookings, care notes, and reviews initialized.');
 };
 
 // Health Check with Persistence Mode & Uptime Visibility
@@ -413,6 +448,9 @@ app.use('/api/v1/care-notes', careNoteRoutes);
 
 // Admin Portal Verification Routes
 app.use('/api/v1/admin', adminRoutes);
+
+// Post-Shift Rating & Review Routes
+app.use('/api/v1/reviews', reviewRoutes);
 
 // Global Error Handler
 app.use(errorHandler);

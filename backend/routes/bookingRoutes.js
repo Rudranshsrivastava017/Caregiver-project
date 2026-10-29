@@ -7,6 +7,10 @@ const {
   getBookingById,
   updateBookingStatus,
 } = require('../controllers/bookingController');
+const {
+  createBookingReview,
+  getBookingReview,
+} = require('../controllers/reviewController');
 const { protect } = require('../middlewares/authMiddleware');
 const { roleGuard } = require('../middlewares/roleMiddleware');
 
@@ -25,5 +29,11 @@ router
 // Single booking item & status transitions
 router.route('/:id').get(getBookingById);
 router.route('/:id/status').patch(updateBookingStatus);
+
+// Post-shift review and rating
+router
+  .route('/:id/review')
+  .get(getBookingReview)
+  .post(roleGuard(['user', 'admin']), createBookingReview);
 
 module.exports = router;

@@ -86,7 +86,23 @@ const createBooking = async (req, res, next) => {
     if (!patientId || !caregiverId || !serviceId || !scheduledDate || !scheduledTime) {
       return res.status(400).json({
         status: 'fail',
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'Please provide patientId, caregiverId, serviceId, scheduledDate, and scheduledTime.',
+        },
         message: 'Please provide patientId, caregiverId, serviceId, scheduledDate, and scheduledTime.',
+      });
+    }
+
+    // Input Guard: Validate scheduledDate format YYYY-MM-DD and validity
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate) || isNaN(new Date(scheduledDate).getTime())) {
+      return res.status(400).json({
+        status: 'fail',
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'scheduledDate must be a valid date in YYYY-MM-DD format.',
+        },
+        message: 'scheduledDate must be a valid date in YYYY-MM-DD format.',
       });
     }
 
@@ -264,6 +280,27 @@ const getBookings = async (req, res, next) => {
 
     const rawBookings = await BookingModelAdapter.find(query);
     const enrichedList = await Promise.all(rawBookings.map((b) => enrichBooking(b)));
+
+    // Optional query pagination (P1-3)
+    const { page, limit } = req.query;
+    if (page !== undefined || limit !== undefined) {
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.max(1, parseInt(limit, 10) || 10);
+      const total = enrichedList.length;
+      const totalPages = Math.ceil(total / limitNum) || 1;
+      const startIndex = (pageNum - 1) * limitNum;
+      const paginatedData = enrichedList.slice(startIndex, startIndex + limitNum);
+
+      return res.status(200).json({
+        status: 'success',
+        count: paginatedData.length,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages,
+        data: paginatedData,
+      });
+    }
 
     return res.status(200).json({
       status: 'success',

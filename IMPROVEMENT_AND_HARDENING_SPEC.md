@@ -176,26 +176,42 @@ If `SMTP_HOST` or `SMTP_USER` are not configured in `.env`, the email service au
   - Dynamic CORS added in `backend/server.js` to ensure any local Vite dev port (`5173`, `5174`, etc.) and `PATCH` methods are fully supported.
   - Test suite `test_step1_security_headers_and_ratelimit.js` passes 100%.
 
-#### P1-2. Controller Input Validation Guards
+#### P1-2. Controller Input Validation Guards [COMPLETED & VERIFIED]
+- **Status**: ✅ **Implemented & Verified**.
 - **Action**:
-  - Standardize error responses to `{ status: 'fail', error: { code: 'INVALID_INPUT', message: '...' } }`.
-  - Validate clinical vitals (e.g. blood pressure format, numerical ranges for pulse, SpO2, and temperature) in `careNoteController.js`.
+  - Implemented `validateClinicalVitals` in `backend/controllers/careNoteController.js` validating blood pressure format (`XXX/YY mmHg`), physiological pulse range (30-240 bpm), SpO2 saturation (50-100%), body temperature (90-108 °F or 32-42.5 °C), and blood sugar levels.
+  - Standardized input failure responses with `{ status: 'fail', error: { code: 'INVALID_INPUT', message: '...' }, message: '...' }`.
+  - Added strict date format (`YYYY-MM-DD`) and calendar validity verification in `bookingController.js`.
+  - Test suite `test_step2_validation_and_pagination.js` verifies all input guards with 100% pass rate.
 
-#### P1-3. Query Pagination Defaults
+#### P1-3. Query Pagination Defaults [COMPLETED & VERIFIED]
+- **Status**: ✅ **Implemented & Verified**.
 - **Action**:
-  - Add optional `page` and `limit` query parameters to `GET /api/v1/bookings`, `GET /api/v1/patients`, and `GET /api/v1/caregivers`.
-  - Retain current behavior (return all records) when `page` and `limit` are omitted to avoid breaking existing frontend consumers.
+  - Added optional `page` and `limit` query parameters with metadata (`total`, `page`, `limit`, `totalPages`) to:
+    - `GET /api/v1/bookings` (`bookingController.js`)
+    - `GET /api/v1/patients` (`patientController.js`)
+    - `GET /api/v1/caregivers` (`caregiverController.js`)
+  - Guaranteed 100% backward compatibility: when `page` and `limit` are omitted, all records are returned without modification to response contract.
+  - Test suite `test_step2_validation_and_pagination.js` verifies both paginated slices and full listings.
 
 ---
 
-### 3.3 P2 — Accessibility (WCAG 2.1 AA) & Resilience (Phase 7)
+### 3.3 P2 — Accessibility (WCAG 2.1 AA) & Resilience (Phase 7A) [COMPLETED & VERIFIED]
 
-| Feature | Implementation | Non-Breaking Guarantee |
-|---|---|---|
-| **Font Scaling Widget** | Normal (100%), Large (115%), Extra Large (130%) root font scaling button in Navbar | Uses CSS custom property `--app-font-scale`; no Tailwind classes modified |
-| **High Contrast Mode** | Accessible toggle providing minimum 7:1 contrast ratio for text | Additive CSS `.high-contrast` class on `document.body` |
-| **Offline Network Banner** | Banner alerting user if internet connection drops (`window.addEventListener('offline')`) | Non-blocking fixed top banner; dismisses on `online` |
-| **Global React Error Boundary** | Root error boundary component catching unhandled UI exceptions | Renders accessible fallback screen with "Reload Application" button |
+- **Status**: ✅ **Implemented & Verified in Browser**.
+- **Delivered Components**:
+  - `AccessibilityContext.jsx` & `AccessibilityToolbar.jsx`: Normal (100%), Large (115%), Extra Large (130%) font scaling and instant High-Contrast Mode toggle.
+  - `index.css`: Added dynamic `--app-font-scale` calculation and `.high-contrast` styling achieving > 7:1 WCAG 2.1 AA contrast ratios.
+  - `OfflineBanner.jsx`: Active network detection and non-intrusive alert when internet drops.
+  - `ErrorBoundary.jsx`: Senior-friendly fallback UI with 1-click reload and direct helpline assistance.
+  - Verified live in browser: font scale transitions, contrast switches, zero compilation errors (`npm run build` passed in 651ms).
+
+| Feature | Implementation | Non-Breaking Guarantee | Status |
+|---|---|---|:---:|
+| **Font Scaling Widget** | Normal (100%), Large (115%), Extra Large (130%) root font scaling button in Navbar | Uses CSS custom property `--app-font-scale`; no Tailwind classes modified | ✅ Verified |
+| **High Contrast Mode** | Accessible toggle providing minimum 7:1 contrast ratio for text | Additive CSS `.high-contrast` class on `document.body` | ✅ Verified |
+| **Offline Network Banner** | Banner alerting user if internet connection drops (`window.addEventListener('offline')`) | Non-blocking fixed top banner; dismisses on `online` | ✅ Verified |
+| **Global React Error Boundary** | Root error boundary component catching unhandled UI exceptions | Renders accessible fallback screen with "Reload Application" button | ✅ Verified |
 
 ---
 
@@ -210,6 +226,7 @@ If `SMTP_HOST` or `SMTP_USER` are not configured in `.env`, the email service au
 | **Cancel Hiring (By Caregiver)**| Caregiver declines incoming request (`pending` -> `cancelled`). | Releases shift slot; sends socket notification to family user. | ✅ Fully Functional |
 | **Freed Slot Re-booking** | Once cancelled, the slot is no longer in `['pending', 'confirmed', 'in_progress']`. Another family user can book it. | Verified in `test_booking_routes.js` (Test 7: User 2 successfully books freed slot). | ✅ Fully Functional |
 | **Shift Execution & Notes** | Caregiver starts shift (`in_progress`), records vitals (`POST /api/v1/care-notes`), and marks `completed`. | Verified in `test_phase5_carenote_and_socket.js`. | ✅ Fully Functional |
+| **Shift Completion & Reviews** | Family user rates caregiver (1–5 stars) upon shift completion; updates caregiver weighted rating & `reviewsCount`. | Verified in `test_step3_caregiver_reviews.js`. | ✅ Fully Functional |
 
 ---
 

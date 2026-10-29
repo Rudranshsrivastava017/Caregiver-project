@@ -122,6 +122,22 @@ class BookingModelAdapter {
     return b;
   }
 
+  static async updateBooking(id, updateData) {
+    if (mongoose.connection.readyState === 1) {
+      return await Booking.findOneAndUpdate(
+        { bookingId: id },
+        { $set: updateData },
+        { new: true }
+      );
+    }
+
+    const b = inMemoryBookings.get(id);
+    if (!b) return null;
+    const updated = { ...b, ...updateData, updatedAt: new Date() };
+    inMemoryBookings.set(id, updated);
+    return updated;
+  }
+
   static seedInitialData(bookingsArray) {
     bookingsArray.forEach((b) => inMemoryBookings.set(b.bookingId, b));
   }

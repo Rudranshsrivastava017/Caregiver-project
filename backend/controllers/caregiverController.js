@@ -64,6 +64,27 @@ const getCaregivers = async (req, res, next) => {
       };
     });
 
+    // Optional query pagination (P1-3)
+    const { page, limit } = req.query;
+    if (page !== undefined || limit !== undefined) {
+      const pageNum = Math.max(1, parseInt(page, 10) || 1);
+      const limitNum = Math.max(1, parseInt(limit, 10) || 10);
+      const total = enrichedCaregivers.length;
+      const totalPages = Math.ceil(total / limitNum) || 1;
+      const startIndex = (pageNum - 1) * limitNum;
+      const paginatedData = enrichedCaregivers.slice(startIndex, startIndex + limitNum);
+
+      return res.status(200).json({
+        status: 'success',
+        count: paginatedData.length,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages,
+        data: paginatedData,
+      });
+    }
+
     return res.status(200).json({
       status: 'success',
       count: enrichedCaregivers.length,

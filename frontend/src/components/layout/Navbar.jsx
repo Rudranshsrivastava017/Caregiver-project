@@ -5,6 +5,7 @@ import axiosClient from '../../api/axiosClient';
 import { useAuth } from '../../context/AuthContext';
 import { HeartPulse, PhoneCall, ShieldCheck, UserCheck, Calendar, Stethoscope, Users, LogOut, Clock, ShieldAlert, FileCheck, MailCheck } from 'lucide-react';
 import NotificationDropdown from './NotificationDropdown';
+import AccessibilityToolbar from './AccessibilityToolbar';
 
 export default function Navbar() {
   const location = useLocation();
@@ -29,17 +30,24 @@ export default function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-slate-200 shadow-sm">
-      {/* Top Banner - Emergency Assistance & Trust Signals */}
+      {/* Top Banner - Emergency Assistance, Accessibility & Trust Signals */}
       <div className="bg-slate-900 text-white text-sm py-2 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2 text-center sm:text-left">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-2 text-center md:text-left">
           <div className="flex items-center gap-2 font-medium">
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
-            <span>100% Identity & Certification Verified Healthcare Professionals</span>
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span className="hidden sm:inline">100% Identity & Certification Verified Healthcare Professionals</span>
+            <span className="sm:hidden text-xs">Verified Healthcare Professionals</span>
           </div>
-          <div className="flex items-center gap-4 text-xs sm:text-sm">
-            <a href="tel:18001234567" className="flex items-center gap-1.5 font-bold text-teal-300 hover:underline">
-              <PhoneCall className="w-4 h-4 text-amber-400" />
-              <span>24/7 Helpline: 1800-123-4567</span>
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-3 sm:gap-4 text-xs sm:text-sm">
+            <AccessibilityToolbar />
+            <div className="h-4 w-px bg-slate-700 hidden sm:block" />
+            <a
+              href="tel:18001234567"
+              aria-label="Call 24/7 Helpline at 1800-123-4567"
+              className="flex items-center gap-1.5 font-bold text-teal-300 hover:underline"
+            >
+              <PhoneCall className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>Helpline: 1800-123-4567</span>
             </a>
           </div>
         </div>

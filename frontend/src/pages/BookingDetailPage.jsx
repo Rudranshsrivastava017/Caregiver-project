@@ -23,7 +23,9 @@ import {
   Loader2,
   Info,
   Activity,
+  Star,
 } from 'lucide-react';
+import ReviewModal from '../components/booking/ReviewModal';
 
 export default function BookingDetailPage() {
   const { id } = useParams();
@@ -35,13 +37,28 @@ export default function BookingDetailPage() {
   const [error, setError] = useState(null);
   const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [isNoteFormOpen, setIsNoteFormOpen] = useState(false);
+  const [bookingReview, setBookingReview] = useState(null);
+  const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   const fetchBooking = async () => {
     setIsLoading(true);
     try {
       const response = await axiosClient.get(`/bookings/${id}`);
       if (response.data?.status === 'success') {
-        setBooking(response.data.data);
+        const fetchedBooking = response.data.data;
+        setBooking(fetchedBooking);
+
+        // If completed, check for existing review
+        if (fetchedBooking.status === 'completed') {
+          try {
+            const reviewRes = await axiosClient.get(`/bookings/${id}/review`);
+            if (reviewRes.data?.data) {
+              setBookingReview(reviewRes.data.data);
+            }
+          } catch (reviewErr) {
+            console.warn('Could not fetch booking review:', reviewErr.message);
+          }
+        }
       }
     } catch (err) {
       setError(
@@ -342,9 +359,61 @@ export default function BookingDetailPage() {
                   <span>Cancel Booking</span>
                 </button>
               )}
+
+            {/* Family User: Rate Caregiver when shift is completed */}
+            {isFamilyUser && booking.status === 'completed' && !bookingReview && (
+              <button
+                type="button"
+                onClick={() => setIsReviewModalOpen(true)}
+                className="btn-primary text-xs px-4 py-2.5 flex items-center gap-1.5 cursor-pointer bg-amber-500 hover:bg-amber-600 text-slate-950 font-extrabold shadow-sm"
+              >
+                <Star className="w-4 h-4 fill-slate-950 text-slate-950" />
+                <span>Rate & Review Caregiver</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Review Display Card if already reviewed */}
+      {bookingReview && (
+        <div className="bg-white rounded-3xl border border-amber-200 p-6 sm:p-8 shadow-sm space-y-3 bg-gradient-to-r from-amber-50/50 to-white">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-amber-100 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="flex items-center text-amber-500">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star
+                    key={s}
+                    className={`w-4 h-4 ${
+                      s <= bookingReview.rating
+                        ? 'fill-amber-400 text-amber-500'
+                        : 'text-slate-200'
+                    }`}
+                  />
+                ))}
+              </div>
+              <span className="font-extrabold text-amber-950 text-sm">
+                {bookingReview.rating}.0 / 5.0 Rating
+              </span>
+            </div>
+            <span className="inline-flex items-center gap-1 text-xs font-bold text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 w-fit">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Verified Family Feedback</span>
+            </span>
+          </div>
+
+          {bookingReview.comment && (
+            <p className="text-slate-700 text-sm leading-relaxed italic">
+              "{bookingReview.comment}"
+            </p>
+          )}
+
+          <div className="text-[11px] text-slate-500 pt-1 font-medium">
+            Submitted by {bookingReview.userName || 'Family Member'} on{' '}
+            {new Date(bookingReview.createdAt || Date.now()).toLocaleDateString()}
+          </div>
+        </div>
+      )}
 
       {/* Real-time Care Notes & Clinical Shift Timeline */}
       <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
@@ -358,6 +427,17 @@ export default function BookingDetailPage() {
         onClose={() => setIsNoteFormOpen(false)}
         onSuccess={() => {
           // CareNoteTimeline will automatically update via real-time socket event
+        }}
+      />
+
+      {/* Family Review Modal */}
+      <ReviewModal
+        booking={booking}
+        isOpen={isReviewModalOpen}
+        onClose={() => setIsReviewModalOpen(false)}
+        onSuccess={(newReview) => {
+          setBookingReview(newReview);
+          fetchBooking();
         }}
       />
     </div>

@@ -152,20 +152,49 @@ cd frontend && npm run build
 
 ---
 
-### 🚀 Phase 7: End-to-End Hardening & Accessibility QA
+### ✅ Phase 7A: Senior-Citizen Accessibility & Resilience (WCAG 2.1 AA) [COMPLETED & VERIFIED]
+- **Delivered**:
+  - `AccessibilityContext.jsx` & `AccessibilityToolbar.jsx`: Normal (100%), Large (115%), Extra Large (130%) font scaling and High-Contrast Mode toggle.
+  - `index.css`: Added dynamic `--app-font-scale` calculation and `.high-contrast` styling (> 7:1 contrast ratio).
+  - `OfflineBanner.jsx`: Floating warning banner alerting users when internet connectivity drops with auto-recovery notice.
+  - `ErrorBoundary.jsx`: Global React error boundary with accessible fallback UI, 1-click reload, and direct helpline assistance.
+  - Verified with browser subagent recording and `npm run build` passing with 0 errors.
 
-#### Objective:
-Audit and polish the entire application for senior citizens, edge cases, and accessibility standards.
+---
 
-- **Senior-Citizen Accessibility (WCAG 2.1 AA)**:
-  - Font scaling toggle (Normal / Large / Extra Large) in navbar.
-  - High-contrast visual mode.
-  - Full keyboard accessibility and visible focus outlines.
-  - Screen-reader friendly aria-labels on all modal controls, calendar slots, and status badges.
-- **Resilience & Error Handling**:
-  - Global error boundaries catching unhandled UI exceptions.
-  - Offline network banner when internet drops.
-  - Graceful handling of expired JWT sessions with clear re-login prompts.
+### ✅ Phase 7B: Input Validation Guards & Pagination Defaults [COMPLETED & VERIFIED]
+- **Delivered**:
+  - `careNoteController.js`: Clinical vitals validation (`validateClinicalVitals`) verifying blood pressure format, pulse, SpO2, and body temperature against clinical thresholds.
+  - Standardized error response format `{ status: 'fail', error: { code: 'INVALID_INPUT', message: '...' } }`.
+  - `bookingController.js`: Strict `YYYY-MM-DD` date format and calendar validity check.
+  - Query pagination: Optional `page` and `limit` support across `/bookings`, `/patients`, and `/caregivers` with metadata (`total`, `page`, `limit`, `totalPages`) while retaining 100% backward compatibility when omitted.
+  - Automated test suite `node backend/test_step2_validation_and_pagination.js` passes 9/9 tests cleanly (All 9 backend test suites pass 100%).
+
+---
+
+### ✅ Phase 8: Caregiver Rating & Reviews System [COMPLETED & VERIFIED]
+- **Delivered**:
+  - `Review.js` model with dual-mode Mongoose and in-memory Map adapter support (`ReviewModelAdapter`).
+  - `reviewController.js`:
+    - `POST /api/v1/bookings/:id/review`: Allows family members to submit 1–5 star ratings and clinical feedback for completed shifts.
+    - Automatic calculation of caregiver weighted average rating: $\text{newRating} = \frac{(\text{currentRating} \times \text{reviewsCount}) + \text{score}}{\text{reviewsCount} + 1}$, incrementing `reviewsCount`.
+    - Enforced guards: only completed shifts, only booking owner, duplicate prevention (HTTP 400), and invalid rating bounds check (`INVALID_INPUT`).
+    - `GET /api/v1/caregivers/:id/reviews`: Public directory reviews listing with pagination metadata.
+    - `GET /api/v1/bookings/:id/review`: Single shift review status.
+  - Frontend:
+    - `ReviewModal.jsx`: Senior-accessible interactive star selector and clinical feedback modal.
+    - `BookingDetailPage.jsx`: Embedded "Rate & Review Caregiver" action and "Your Care Shift Review" verified card.
+    - `CaregiverDetailPage.jsx`: "Verified Patient & Family Reviews" section with ratings breakdown.
+  - Automated test suite `node backend/test_step3_caregiver_reviews.js` passes 9/9 tests cleanly (All 10 backend test suites pass 100%).
+
+---
+
+### 🚀 Phase 9: User Profile Management & Settings (Next Up)
+- **Backend API**:
+  - `PATCH /api/v1/auth/me`: Allows user to update `fullName`, `phone`, `address`, and `profilePhotoUrl`.
+- **Frontend Experience**:
+  - Senior-friendly `/profile` page with personal details, phone verification status, and emergency assistance numbers.
+  - Direct link to profile from user badge in `Navbar.jsx`.
 
 ---
 

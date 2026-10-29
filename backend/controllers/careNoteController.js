@@ -4,6 +4,76 @@ const { CaregiverModelAdapter } = require('../models/Caregiver');
 const { PatientModelAdapter } = require('../models/Patient');
 const { emitCareNoteAdded } = require('../sockets/index');
 
+/**
+ * Clinical Vitals Validation Guard (P1-2)
+ * Validates format and physiological ranges for eldercare clinical vitals.
+ * Returns null if valid, or an error string if invalid.
+ */
+const validateClinicalVitals = (vitals) => {
+  if (!vitals || typeof vitals !== 'object') {
+    return null; // optional or default vitals will be applied
+  }
+
+  // 1. Blood Pressure Validation: format 'XXX/YY' or 'XXX/YY mmHg'
+  if (vitals.bp) {
+    const bpStr = String(vitals.bp).trim();
+    const bpMatch = bpStr.match(/^(\d{2,3})\s*\/\s*(\d{2,3})(\s*mmHg)?$/i);
+    if (!bpMatch) {
+      return 'Blood pressure must be in valid format (e.g., 120/80 or 120/80 mmHg).';
+    }
+    const systolic = parseInt(bpMatch[1], 10);
+    const diastolic = parseInt(bpMatch[2], 10);
+    if (systolic < 60 || systolic > 260 || diastolic < 30 || diastolic > 160) {
+      return `Blood pressure readings (${systolic}/${diastolic} mmHg) are outside physiological ranges (Systolic: 60-260, Diastolic: 30-160).`;
+    }
+  }
+
+  // 2. Pulse Validation: 30 to 240 bpm
+  if (vitals.pulse !== undefined && vitals.pulse !== null && vitals.pulse !== '') {
+    const pulseNum = parseInt(String(vitals.pulse).replace(/\D+/g, ''), 10);
+    if (isNaN(pulseNum) || pulseNum < 30 || pulseNum > 240) {
+      return 'Pulse must be a valid number between 30 and 240 bpm.';
+    }
+  }
+
+  // 3. SpO2 (Oxygen Saturation) Validation: 50% to 100%
+  if (vitals.oxygenLevel !== undefined && vitals.oxygenLevel !== null && vitals.oxygenLevel !== '') {
+    const oxyNum = parseInt(String(vitals.oxygenLevel).replace(/[^\d.]/g, ''), 10);
+    if (isNaN(oxyNum) || oxyNum < 50 || oxyNum > 100) {
+      return 'Oxygen saturation (SpO2) must be between 50% and 100%.';
+    }
+  }
+
+  // 4. Body Temperature Validation: 90.0°F to 108.0°F (or 32°C to 42.5°C)
+  if (vitals.temperature !== undefined && vitals.temperature !== null && vitals.temperature !== '') {
+    const tempStr = String(vitals.temperature);
+    const isCelsius = tempStr.includes('C') || tempStr.includes('c');
+    const tempNum = parseFloat(tempStr.replace(/[^\d.]/g, ''));
+    if (isNaN(tempNum)) {
+      return 'Temperature must be a valid numeric measurement (e.g., 98.6 °F).';
+    }
+    if (isCelsius) {
+      if (tempNum < 32.0 || tempNum > 42.5) {
+        return 'Body temperature in Celsius must be between 32.0°C and 42.5°C.';
+      }
+    } else {
+      if (tempNum < 90.0 || tempNum > 108.0) {
+        return 'Body temperature must be between 90.0°F and 108.0°F.';
+      }
+    }
+  }
+
+  // 5. Blood Sugar Level Validation (optional): 20 to 700 mg/dL
+  if (vitals.sugarLevel !== undefined && vitals.sugarLevel !== null && vitals.sugarLevel !== '') {
+    const sugarNum = parseInt(String(vitals.sugarLevel).replace(/\D+/g, ''), 10);
+    if (isNaN(sugarNum) || sugarNum < 20 || sugarNum > 700) {
+      return 'Blood sugar level must be between 20 and 700 mg/dL.';
+    }
+  }
+
+  return null;
+};
+
 // 1. Create a Care Note for an active shift
 const createCareNote = async (req, res, next) => {
   try {
@@ -18,8 +88,27 @@ const createCareNote = async (req, res, next) => {
     if (!bookingId) {
       return res.status(400).json({
         status: 'fail',
+        error: {
+          code: 'INVALID_INPUT',
+          message: 'Booking ID is required to log a care note.',
+        },
         message: 'Booking ID is required to log a care note.',
       });
+    }
+
+    // Input Guard: Validate clinical vitals if provided
+    if (vitals) {
+      const vitalsError = validateClinicalVitals(vitals);
+      if (vitalsError) {
+        return res.status(400).json({
+          status: 'fail',
+          error: {
+            code: 'INVALID_INPUT',
+            message: vitalsError,
+          },
+          message: vitalsError,
+        });
+      }
     }
 
     const booking = await BookingModelAdapter.findById(bookingId);
