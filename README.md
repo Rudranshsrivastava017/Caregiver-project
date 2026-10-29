@@ -215,27 +215,8 @@ cd backend
 npm install
 ```
 
-<<<<<<< HEAD
-Create a `.env` file in the `backend/` directory (or copy from `.env.example`):
-```env
-PORT=5000
-NODE_ENV=development
-MONGO_URI=mongodb://127.0.0.1:27017/caregiver_db
-JWT_ACCESS_SECRET=super_secret_access_key_2026
-JWT_ACCESS_EXPIRES_IN=15m
-JWT_REFRESH_SECRET=super_secret_refresh_key_2026
-JWT_REFRESH_EXPIRES_IN=7d
-CLIENT_URL=http://localhost:5173
 
-# Optional: SMTP Configuration (Defaults to dev console logger if omitted)
-# SMTP_HOST=smtp.gmail.com
-# SMTP_PORT=587
-# SMTP_USER=your_email@gmail.com
-# SMTP_PASS=your_app_password
-```
-=======
 
->>>>>>> d130cee47b43d7625ab12e9229ab0076214d547c
 
 Start the backend server:
 ```bash
@@ -267,82 +248,6 @@ npm run dev
 
 ---
 
-## 🔑 Pre-Seeded Demo Accounts
-
-The platform includes pre-seeded demo credentials for instant 1-click testing. On the `/login` page, you can either click the **1-Click Test Login Presets** or manually enter:
-
-| Role | Email | Password | Pre-loaded Data / Capabilities |
-|---|---|---|---|
-| 👨‍👩‍👧 **Family User** | `vikram@careelderly.org` | `password123` | Linked patient (*Savitri Devi*), existing booking history |
-| 🩺 **Nurse Caregiver** | `anita.nurse@careelderly.org` | `password123` | Verified Registered Nurse, assigned shifts, can log vitals |
-| 🛡️ **Platform Admin** | `admin@careelderly.org` | `password123` | Full access to `/admin` and `/admin/verifications` queue |
-| ⏳ **Pending Caregiver** | `pending.caregiver@careelderly.org` | `password123` | Awaiting admin review (ideal for testing verification flow) |
-
----
-
-## 📡 REST API Reference
-
-All primary endpoints are prefixed with `/api/v1`.
-
-### 🔐 Authentication (`/api/v1/auth`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/auth/register` | Public | Register new Family User or Caregiver |
-| `POST` | `/auth/login` | Public | Login with email/password; receives access token & sets HttpOnly cookie |
-| `POST` | `/auth/google` | Public | Authenticate via Google OAuth credential |
-| `GET` | `/auth/me` | Bearer | Get authenticated user profile |
-| `POST` | `/auth/refresh` | Public (Cookie) | Rotate and refresh access token |
-| `POST` | `/auth/logout` | Bearer | Clear refresh token cookie & terminate session |
-| `GET` | `/auth/verify-email` | Public | Verify email address using cryptographic token |
-| `POST` | `/auth/resend-verification` | Bearer | Re-trigger verification email dispatch |
-
-### 👵 Elderly Patients (`/api/v1/patients`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/patients` | Bearer (User/Admin) | List caller's registered elderly patients |
-| `POST` | `/patients` | Bearer (User/Admin) | Register new patient with medical history & vitals baseline |
-| `GET` | `/patients/:id` | Bearer (Owner/Admin) | Get patient clinical profile (`403` if not owner) |
-| `PUT` | `/patients/:id` | Bearer (Owner/Admin) | Update medical records or emergency contact |
-| `DELETE` | `/patients/:id` | Bearer (Owner/Admin) | Remove patient record |
-
-### 🏥 Healthcare Services & Catalog (`/api/v1/services`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/services` | Public | List catalog services (filterable by `category`, `search`) |
-| `GET` | `/services/:id` | Public | Retrieve single service details & pricing estimates |
-| `POST` | `/services` | Bearer (Admin) | Add new healthcare service to catalog |
-
-### 🩺 Caregiver Directory (`/api/v1/caregivers`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/caregivers` | Public | List verified caregivers (`specialization`, `location`, `minRating`) |
-| `GET` | `/caregivers/:id` | Public | View caregiver bio, verified licenses, and weekly availability |
-
-### 📅 Shift Bookings (`/api/v1/bookings`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/bookings` | Bearer (User) | Create new booking request with 409 conflict detection |
-| `GET` | `/bookings` | Bearer | Retrieve bookings for current user or caregiver |
-| `GET` | `/bookings/:id` | Bearer (Participant) | View booking details with populated patient & staff records |
-| `PUT` | `/bookings/:id/status` | Bearer (Participant) | Transition shift state (`confirmed`, `in_progress`, `completed`, `cancelled`) |
-| `GET` | `/bookings/availability` | Public | Query booked shifts for a specific caregiver and date |
-
-### 📋 Clinical Care Notes & Vitals (`/api/v1/care-notes`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `POST` | `/care-notes` | Bearer (Caregiver) | Log clinical observations and vitals (BP, HR, SpO2, Temp, Sugar) |
-| `GET` | `/care-notes/booking/:bookingId` | Bearer (Participant) | Chronological vitals timeline for a specific care shift |
-| `GET` | `/care-notes/patient/:patientId` | Bearer (Owner/Staff) | Full longitudinal clinical history for an elderly patient |
-
-### 🛡️ Administrative Portal (`/api/v1/admin`)
-| Method | Endpoint | Access | Description |
-|---|---|---|---|
-| `GET` | `/admin/caregivers/pending` | Bearer (Admin) | Retrieve queue of caregivers awaiting credential verification |
-| `PUT` | `/admin/caregivers/:id/verify` | Bearer (Admin) | Approve caregiver license & activate public profile |
-| `PUT` | `/admin/caregivers/:id/reject` | Bearer (Admin) | Reject caregiver submission with structured feedback |
-| `GET` | `/admin/analytics` | Bearer (Admin) | Platform operational metrics, shift volumes, and ratios |
-
----
 
 ## 🧪 Testing & Automated Verification
 
@@ -387,81 +292,6 @@ npm run build
 
 <<<<<<< HEAD
 ---
-
-## 📁 Project Structure
-
-```text
-caregiver-platform/
-├── backend/
-│   ├── config/
-│   │   └── db.js                 # Dual-mode DB connector (Mongoose / In-Memory fallback)
-│   ├── controllers/
-│   │   ├── adminController.js    # Caregiver credential verification & metrics
-│   │   ├── authController.js     # Auth, JWT tokens, email verification, Google OAuth
-│   │   ├── bookingController.js  # Booking engine, 409 conflict checks, state machine
-│   │   ├── careNoteController.js # Clinical vitals logging & history
-│   │   ├── caregiverController.js# Verified staff directory & filter queries
-│   │   ├── patientController.js  # Patient CRUD with ownership security guard
-│   │   └── serviceController.js  # Healthcare service catalog endpoints
-│   ├── middlewares/
-│   │   ├── authMiddleware.js     # JWT extraction, verification & session attachment
-│   │   ├── errorMiddleware.js    # Standardized error responder
-│   │   └── roleMiddleware.js     # RBAC (roleGuard & verificationGuard)
-│   ├── models/                   # Dual-mode schemas (MongoDB / In-Memory Map adapters)
-│   │   ├── Booking.js
-│   │   ├── CareNote.js
-│   │   ├── Caregiver.js
-│   │   ├── Patient.js
-│   │   ├── Service.js
-│   │   └── User.js
-│   ├── routes/                   # Express REST route definitions
-│   ├── services/
-│   │   └── emailService.js       # Nodemailer SMTP with dev console fallback
-│   ├── sockets/
-│   │   └── index.js              # Socket.io gateway with user room isolation
-│   ├── server.js                 # Server entry point & test fixture seeder
-│   └── package.json
-│
-├── frontend/
-│   ├── src/
-│   │   ├── api/
-│   │   │   └── axiosClient.js    # In-memory JWT attach & 401 refresh interceptors
-│   │   ├── components/
-│   │   │   ├── auth/             # ProtectedRoute guards & role redirection
-│   │   │   ├── booking/          # ScheduleCalendar, BookingSummary, conflict flags
-│   │   │   ├── careNotes/        # CareNoteForm modal & CareNoteTimeline
-│   │   │   ├── caregivers/       # CaregiverCard, filters, badge indicators
-│   │   │   ├── layout/           # Navbar with SOS Hotline banner, Footer
-│   │   │   ├── patients/         # PatientCard, PatientForm with mobility tags
-│   │   │   ├── services/         # ServiceCard & category filters
-│   │   │   └── status/           # Standardized lifecycle StatusBadges
-│   │   ├── context/
-│   │   │   ├── AuthContext.jsx   # In-memory JWT token state & user session
-│   │   │   └── SocketContext.jsx # Real-time event subscription & Sonner toasts
-│   │   ├── pages/
-│   │   │   ├── AdminDashboardPage.jsx        # Platform metrics & KPIs
-│   │   │   ├── BookingDetailPage.jsx        # Shift tracker & live care notes
-│   │   │   ├── BookingsPage.jsx             # Active & historical shifts
-│   │   │   ├── CaregiverDetailPage.jsx      # Doctor/nurse qualifications & booking
-│   │   │   ├── CaregiverPendingPage.jsx     # Waiting state for unverified caregivers
-│   │   │   ├── CaregiverVerificationPage.jsx# Admin document review queue
-│   │   │   ├── CaregiversPage.jsx           # Staff directory
-│   │   │   ├── LandingPage.jsx              # Hero, services, testimonials
-│   │   │   ├── LoginPage.jsx                # 1-click demo login presets
-│   │   │   ├── NewBookingPage.jsx           # 3-step scheduling wizard
-│   │   │   ├── PatientsPage.jsx             # Family patient roster
-│   │   │   ├── RegisterPage.jsx             # User & Caregiver registration
-│   │   │   └── VerifyEmailPage.jsx          # Token verification landing screen
-│   │   ├── routes/
-│   │   │   └── AppRoutes.jsx                # Client routing tree
-│   │   ├── App.jsx
-│   │   └── main.jsx
-│   ├── index.html
-│   ├── vite.config.js
-│   └── package.json
-│
-└── README.md
-```
 
 ---
 
