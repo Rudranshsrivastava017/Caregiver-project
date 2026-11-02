@@ -23,6 +23,20 @@ const authLimiter = rateLimit({
   },
 });
 
+/**
+ * IP Rate limiter strictly for Pre-Registration OTP endpoints
+ * - Limits request floods to 20 requests per 15 minutes per IP as required by Section 6.1
+ */
+const otpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: process.env.NODE_ENV === 'test' ? 1000 : 20,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests. Please try again later.' },
+  skip: (req) => process.env.NODE_ENV === 'test' && !req.headers['x-test-ratelimit'],
+});
+
 module.exports = {
   authLimiter,
+  otpLimiter,
 };

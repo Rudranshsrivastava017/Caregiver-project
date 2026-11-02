@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const {
   register,
+  registerFamily,
+  registerNurse,
   login,
   googleLogin,
   refreshToken,
@@ -11,8 +13,16 @@ const {
   resendVerification,
   getVerificationStatus,
 } = require('../controllers/authController');
+const otpRoutes = require('./otpRoutes');
 const { protect } = require('../middlewares/authMiddleware');
-const { authLimiter } = require('../middlewares/rateLimiter');
+const { authLimiter, otpLimiter } = require('../middlewares/rateLimiter');
+
+// Pre-registration OTP routes (/api/v1/auth/otp/send & /verify with IP rate limiter)
+router.use('/otp', otpLimiter, otpRoutes);
+
+// Protected Registration routes (Strictly requires verificationToken)
+router.post('/family/register', authLimiter, registerFamily);
+router.post('/nurse/register', authLimiter, registerNurse);
 
 router.post('/register', authLimiter, register);
 router.post('/login', authLimiter, login);

@@ -1,8 +1,10 @@
+const dotenv = require('dotenv');
+dotenv.config();
+
 const express = require('express');
 const http = require('http');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const dotenv = require('dotenv');
 const helmet = require('helmet');
 const connectDB = require('./config/db');
 const { initSocket } = require('./sockets/index');
@@ -23,11 +25,12 @@ const { BookingModelAdapter } = require('./models/Booking');
 const { CareNoteModelAdapter } = require('./models/CareNote');
 const { ReviewModelAdapter } = require('./models/Review');
 
-dotenv.config();
-
 const app = express();
 const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
+
+// Enable reverse proxy trust for IP-based rate limiting behind Nginx/Render/Heroku/Vercel
+app.set('trust proxy', 1);
 
 // HTTP Security Headers (Helmet)
 app.use(
@@ -432,6 +435,7 @@ app.get('/api/v1/health', (req, res) => {
 
 // Auth Routes
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/auth', authRoutes); // Alias to support standard spec endpoints without /v1 prefix
 
 // Patient Profile CRUD Routes
 app.use('/api/v1/patients', patientRoutes);

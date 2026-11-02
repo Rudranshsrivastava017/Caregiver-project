@@ -4,6 +4,7 @@ const { UserModelAdapter } = require('../models/User');
 const { CaregiverModelAdapter } = require('../models/Caregiver');
 const { ServiceModelAdapter } = require('../models/Service');
 const { sendVerificationEmail } = require('../services/emailService');
+const { consumeVerification } = require('../services/otpService');
 const {
   generateAccessToken,
   generateRefreshToken,
@@ -45,13 +46,20 @@ const register = async (req, res, next) => {
       });
     }
 
-    const isCaregiver = role === 'caregiver';
+    const isCaregiver = role === 'caregiver' || role === 'nurse';
     const userId = `${isCaregiver ? 'CG' : 'USER'}-${Date.now().toString().slice(-6)}`;
 
-    // Generate cryptographic email verification token
-    const emailVerificationToken = crypto.randomBytes(32).toString('hex');
-    const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-    const isEmailVerified = role === 'admin';
+    // Verify email token if provided via pre-registration OTP flow
+    let isEmailVerified = !!req.body.isEmailVerified || (role === 'admin');
+    if (!isEmailVerified && req.body.verificationToken) {
+      const verificationRole = isCaregiver ? 'nurse' : 'family';
+      await consumeVerification(email.trim().toLowerCase(), verificationRole, req.body.verificationToken);
+      isEmailVerified = true;
+    }
+
+    // Generate cryptographic email verification token for legacy fallback if not verified
+    const emailVerificationToken = isEmailVerified ? null : crypto.randomBytes(32).toString('hex');
+    const emailVerificationExpires = isEmailVerified ? null : new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
     const newUser = await UserModelAdapter.createUser({
       userId,
@@ -140,6 +148,63 @@ const register = async (req, res, next) => {
       accessToken,
     });
   } catch (error) {
+    if (error.status === 403) {
+      return res.status(403).json({ status: 'fail', message: error.message });
+    }
+    next(error);
+  }
+};
+
+// Protected Register Route for Family Portal (Requires consumed OTP verificationToken)
+const registerFamily = async (req, res, next) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const { verificationToken } = req.body;
+
+    if (!verificationToken) {
+      return res.status(403).json({
+        status: 'fail',
+        message: 'Email not verified. Please verify your email first.',
+      });
+    }
+
+    // Fixed role 'family' enforced on the server
+    await consumeVerification(email, 'family', verificationToken);
+
+    req.body.role = 'user';
+    req.body.isEmailVerified = true;
+    return register(req, res, next);
+  } catch (error) {
+    if (error.status === 403) {
+      return res.status(403).json({ status: 'fail', message: error.message });
+    }
+    next(error);
+  }
+};
+
+// Protected Register Route for Nurse Portal (Requires consumed OTP verificationToken)
+const registerNurse = async (req, res, next) => {
+  try {
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const { verificationToken } = req.body;
+
+    if (!verificationToken) {
+      return res.status(403).json({
+        status: 'fail',
+        message: 'Email not verified. Please verify your email first.',
+      });
+    }
+
+    // Fixed role 'nurse' enforced on the server
+    await consumeVerification(email, 'nurse', verificationToken);
+
+    req.body.role = 'caregiver';
+    req.body.isEmailVerified = true;
+    return register(req, res, next);
+  } catch (error) {
+    if (error.status === 403) {
+      return res.status(403).json({ status: 'fail', message: error.message });
+    }
     next(error);
   }
 };
@@ -482,6 +547,8 @@ const getVerificationStatus = async (req, res, next) => {
 
 module.exports = {
   register,
+  registerFamily,
+  registerNurse,
   login,
   googleLogin,
   refreshToken,
